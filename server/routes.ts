@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./drizzle-storage";
 import { z } from "zod";
+import bcrypt from "bcrypt";
 import { 
   insertUserSchema, 
   insertServiceCenterSchema,
@@ -97,8 +98,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "بيانات الدخول غير صحيحة" });
       }
 
-      // In a real app, you would verify the password hash here
-      // For demo purposes, we'll accept any password for existing users
+      // Verify password hash
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+      if (!isPasswordValid) {
+        return res.status(401).json({ message: "بيانات الدخول غير صحيحة" });
+      }
+
       if (user.status !== 'active') {
         return res.status(401).json({ message: "الحساب غير مفعل، يرجى انتظار موافقة المسؤول" });
       }
@@ -132,9 +137,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "المستخدم موجود بالفعل" });
       }
 
+      // Hash password before storing
+      const hashedPassword = await bcrypt.hash(userData.password, 10);
+      
       // Create user with pending status
       const user = await storage.createUser({
         ...userData,
+        password: hashedPassword,
         status: 'pending'
       });
 
@@ -207,7 +216,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "المستخدم موجود بالفعل" });
       }
 
-      const user = await storage.createUser(userData);
+      // Hash password before storing
+      const hashedPassword = await bcrypt.hash(userData.password, 10);
+      
+      const user = await storage.createUser({
+        ...userData,
+        password: hashedPassword
+      });
 
       // Log activity
       await storage.logActivity({

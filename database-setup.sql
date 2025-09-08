@@ -161,9 +161,12 @@ CREATE TABLE activity_logs (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
--- Insert initial data
-INSERT INTO users (email, password, full_name, phone, role, status) VALUES
-('admin@sokany.com', 'Admin123!', 'مدير النظام', '+966501234567', 'admin', 'active');
+-- Insert initial data with hashed passwords
+INSERT INTO users (email, password, full_name, phone, role, status, center_id) VALUES
+('admin@sokany.com', '$2b$10$OEwUHTA2mM5n7gfl9cUmtuFuFDoMo3nxPkMhkCZVz4VU1ldADdwhO', 'مدير النظام', '+966501234567', 'admin', 'active', NULL),
+('manager@sokany.com', '$2b$10$/.kGkLZcMyHpy6akxCaVg.OS5EpB/8A62y/6//vSNqMYKYBFX9xwm', 'مدير المركز', '+966501234568', 'manager', 'active', (SELECT id FROM service_centers WHERE name = 'مركز الرياض الرئيسي')),
+('tech@sokany.com', '$2b$10$hkCVKCmfcdt4JPvHRKgwh.TBHm/ok0syInjHd/DaMJPIYPqs22dcy', 'فني الصيانة', '+966501234569', 'technician', 'active', (SELECT id FROM service_centers WHERE name = 'مركز الرياض الرئيسي')),
+('customer@sokany.com', '$2b$10$.TODrPUutIDUIucpD9/LDedbkUyL9Z/t.9UVLgI.GAOduibEl6bN2', 'عميل تجريبي', '+966501234570', 'customer', 'active', (SELECT id FROM service_centers WHERE name = 'مركز الرياض الرئيسي'));
 
 INSERT INTO service_centers (name, address, phone, email) VALUES
 ('مركز الرياض الرئيسي', 'الرياض، حي الملك فهد', '+966112345678', 'riyadh@sokany.com'),
