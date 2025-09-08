@@ -269,6 +269,7 @@ export const insertServiceRequestFollowUpSchema = createInsertSchema(serviceRequ
 }).extend({
   serviceRequestId: z.string(),
   technicianId: z.string(),
+  newStatus: z.enum(['pending', 'in_progress', 'completed', 'cancelled']).optional(),
 });
 
 // Types
