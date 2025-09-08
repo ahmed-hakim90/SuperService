@@ -171,7 +171,7 @@ export const insertUserSchema = createInsertSchema(users).omit({
   createdAt: true,
   updatedAt: true,
 }).extend({
-  centerId: z.string().nullable().optional(),
+  centerId: z.string().nullable().optional().transform(val => val === "" ? null : val),
 });
 
 export const insertServiceCenterSchema = createInsertSchema(serviceCenters).omit({
@@ -179,7 +179,7 @@ export const insertServiceCenterSchema = createInsertSchema(serviceCenters).omit
   createdAt: true,
   updatedAt: true,
 }).extend({
-  managerId: z.string().nullable().optional(),
+  managerId: z.string().nullable().optional().transform(val => val === "" ? null : val),
 });
 
 export const insertCustomerSchema = createInsertSchema(customers).omit({
