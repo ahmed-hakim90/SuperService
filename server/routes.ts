@@ -288,6 +288,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/service-centers/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const centers = await storage.getAllServiceCenters();
+      const center = centers.find(c => c.id === id);
+      
+      if (!center) {
+        return res.status(404).json({ message: "المركز غير موجود" });
+      }
+      
+      res.json(center);
+    } catch (error) {
+      console.error("Get service center error:", error);
+      res.status(500).json({ message: "خطأ في جلب بيانات المركز" });
+    }
+  });
+
   app.post("/api/service-centers", async (req, res) => {
     try {
       const centerData = insertServiceCenterSchema.parse(req.body);

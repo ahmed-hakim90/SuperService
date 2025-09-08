@@ -32,13 +32,19 @@ export default function Dashboard() {
     queryFn: () => apiGet('/api/dashboard/recent-activities'),
   });
 
+  const { data: userCenter } = useQuery({
+    queryKey: ['/api/service-centers', currentUser?.centerId],
+    queryFn: () => currentUser?.centerId ? apiGet(`/api/service-centers/${currentUser.centerId}`) : Promise.resolve(null),
+    enabled: !!currentUser?.centerId,
+  });
+
   return (
     <div>
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-foreground mb-2">لوحة التحكم</h1>
         <p className="text-muted-foreground">
           {currentUser?.role === 'technician' ? 'نظرة عامة على مهامك وإنجازاتك' : 
-           currentUser?.role === 'manager' ? 'نظرة عامة على أداء مركزك' : 'نظرة عامة على أداء النظام'}
+           currentUser?.role === 'manager' ? `نظرة عامة على أداء ${userCenter?.name || 'مركزك'}` : 'نظرة عامة على أداء النظام'}
         </p>
       </div>
       
