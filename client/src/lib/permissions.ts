@@ -32,7 +32,6 @@ export const rolePermissions: Record<UserRole, Record<string, Permission>> = {
   manager: {
     // Manager can access their center's data only
     dashboard: { read: true, create: false, update: false, delete: false },
-    warehouses: { read: true, create: false, update: true, delete: false }, // Their center's warehouses only
     inventory: { read: true, create: true, update: true, delete: false }, // Their center's warehouses only
     customers: { read: true, create: true, update: true, delete: false }, // Their center only
     categories: { read: true, create: true, update: true, delete: false },
@@ -82,7 +81,7 @@ export const rolePageAccess: Record<UserRole, string[]> = {
     "reports", "activities", "data-management", "settings"
   ],
   manager: [
-    "dashboard", "warehouses", "inventory", "customers", 
+    "dashboard", "inventory", "customers", 
     "categories", "service-requests", "transfers", "reports", "activities"
   ],
   technician: [
