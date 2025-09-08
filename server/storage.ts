@@ -303,6 +303,8 @@ export class MemStorage implements IStorage {
       ...userData,
       phone: userData.phone ?? null,
       address: userData.address ?? null,
+      role: userData.role ?? "customer",
+      status: userData.status ?? "pending",
       centerId: userData.centerId ?? null,
       createdAt: new Date(),
       updatedAt: new Date()
@@ -505,6 +507,7 @@ export class MemStorage implements IStorage {
       id: generateId(),
       ...requestData,
       model: requestData.model ?? null,
+      status: requestData.status ?? "pending",
       technicianId: requestData.technicianId ?? null,
       estimatedCost: requestData.estimatedCost ?? null,
       actualCost: requestData.actualCost ?? null,
