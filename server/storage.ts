@@ -293,6 +293,42 @@ export class MemStorage implements IStorage {
         createdAt: new Date("2024-08-28"),
         updatedAt: new Date("2024-09-02"),
         completedAt: null
+      },
+      {
+        id: "req-3",
+        requestNumber: "SR-2024-003",
+        customerId: "customer-1",
+        productId: "prod-2",
+        deviceName: "ثلاجة مزدوجة",
+        model: "RF-500",
+        issue: "الثلاجة تصدر صوت عالي",
+        status: "in_progress",
+        centerId: "center-1",
+        technicianId: "user-3", // Assigned to technician
+        estimatedCost: 300,
+        actualCost: null,
+        notes: "تم تعيين الفني للكشف على الجهاز",
+        createdAt: new Date("2024-09-05"),
+        updatedAt: new Date("2024-09-05"),
+        completedAt: null
+      }
+    ];
+
+    // Sample Follow-ups for service requests
+    const sampleFollowUps: ServiceRequestFollowUp[] = [
+      {
+        id: "followup-1",
+        serviceRequestId: "req-1",
+        technicianId: "user-3",
+        followUpText: "تم الوصول للعميل والكشف على الجهاز. المشكلة في لوحة التحكم الإلكترونية.",
+        createdAt: new Date("2024-09-01T10:30:00")
+      },
+      {
+        id: "followup-2",
+        serviceRequestId: "req-1",
+        technicianId: "user-3",
+        followUpText: "تم طلب قطعة الغيار المطلوبة. سيتم التركيب غداً بإذن الله.",
+        createdAt: new Date("2024-09-01T14:00:00")
       }
     ];
 
@@ -366,6 +402,7 @@ export class MemStorage implements IStorage {
     sampleProducts.forEach(product => this.products.set(product.id, product));
     sampleWarehouses.forEach(warehouse => this.warehouses.set(warehouse.id, warehouse));
     sampleRequests.forEach(request => this.serviceRequests.set(request.id, request));
+    sampleFollowUps.forEach(followup => this.serviceRequestFollowUps.set(followup.id, followup));
     sampleActivities.forEach(activity => this.activityLogs.set(activity.id, activity));
     sampleProductInventory.forEach(inventory => this.productInventory.set(inventory.id, inventory));
   }
