@@ -43,6 +43,9 @@ function canAccessData(user: User, resourceType: string, data?: any): boolean {
     if (resourceType === 'warehouse' && data?.centerId && data.centerId !== user.centerId) {
       return false;
     }
+    if (resourceType === 'customer' && data?.centerId && data.centerId !== user.centerId) {
+      return false;
+    }
   }
   
   // Technician can only access their assigned service requests
@@ -373,9 +376,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Manager and receptionist can see customers from their center only
         filteredCustomers = allCustomers.filter(customer => customer.centerId === currentUser.centerId);
       } else if (currentUser.role === 'technician') {
-        // Technician can see customers related to their service requests
-        // For now, we'll allow them to see all customers (they might need for creating requests)
-        filteredCustomers = allCustomers;
+        // Technician can see customers from their center only
+        filteredCustomers = allCustomers.filter(customer => customer.centerId === currentUser.centerId);
       } else if (currentUser.role === 'customer') {
         // Customer can only see their own data
         filteredCustomers = allCustomers.filter(customer => customer.id === currentUser.id);
@@ -393,12 +395,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/customers", async (req, res) => {
     try {
+      const currentUser = await getCurrentUser(req);
+      if (!currentUser) {
+        return res.status(401).json({ message: "يجب تسجيل الدخول أولاً" });
+      }
+
+      // Check permissions
+      if (currentUser.role === 'customer' || currentUser.role === 'warehouse_manager') {
+        return res.status(403).json({ message: "ليس لديك صلاحية لإضافة عملاء" });
+      }
+
       const customerData = insertCustomerSchema.parse(req.body);
+      
+      // Auto-assign centerId based on user's center
+      if (currentUser.centerId) {
+        customerData.centerId = currentUser.centerId;
+      }
+      
       const customer = await storage.createCustomer(customerData);
 
       // Log activity
       await storage.logActivity({
-        userId: '',
+        userId: currentUser.id,
         action: "create",
         entityType: "customer",
         entityId: customer.id,
