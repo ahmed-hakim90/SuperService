@@ -20,6 +20,9 @@ export default function ServiceRequests() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingRequest, setEditingRequest] = useState<ServiceRequest | null>(null);
   const [formData, setFormData] = useState<Partial<InsertServiceRequest>>({});
+  const [isFollowUpDialogOpen, setIsFollowUpDialogOpen] = useState(false);
+  const [selectedRequestForFollowUp, setSelectedRequestForFollowUp] = useState<ServiceRequest | null>(null);
+  const [followUpText, setFollowUpText] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user: currentUser } = useAuth();
@@ -87,6 +90,21 @@ export default function ServiceRequests() {
     },
   });
 
+  const createFollowUpMutation = useMutation({
+    mutationFn: ({ requestId, followUpText }: { requestId: string; followUpText: string }) => 
+      apiPost(`/api/service-requests/${requestId}/follow-ups`, { followUpText }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/service-requests'] });
+      setIsFollowUpDialogOpen(false);
+      setFollowUpText("");
+      setSelectedRequestForFollowUp(null);
+      toast({ title: "تم إضافة المتابعة بنجاح" });
+    },
+    onError: () => {
+      toast({ variant: "destructive", title: "فشل في إضافة المتابعة" });
+    },
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (editingRequest) {
@@ -108,6 +126,21 @@ export default function ServiceRequests() {
     }
   };
 
+  const handleAddFollowUp = (request: ServiceRequest) => {
+    setSelectedRequestForFollowUp(request);
+    setIsFollowUpDialogOpen(true);
+  };
+
+  const handleSubmitFollowUp = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (selectedRequestForFollowUp && followUpText.trim()) {
+      createFollowUpMutation.mutate({
+        requestId: selectedRequestForFollowUp.id,
+        followUpText: followUpText.trim()
+      });
+    }
+  };
+
   const filteredRequests = serviceRequests?.filter((request: ServiceRequest) => {
     const matchesSearch = request.requestNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          request.deviceName?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -123,20 +156,21 @@ export default function ServiceRequests() {
           <h1 className="text-3xl font-bold text-foreground mb-2">طلبات الصيانة</h1>
           <p className="text-muted-foreground">إدارة ومتابعة طلبات الصيانة</p>
         </div>
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button 
-              className="flex items-center space-x-2 space-x-reverse"
-              onClick={() => {
-                setEditingRequest(null);
-                setFormData({});
-              }}
-              data-testid="button-add-service-request"
-            >
-              <i className="bi bi-plus-circle"></i>
-              <span>طلب صيانة جديد</span>
-            </Button>
-          </DialogTrigger>
+        {canCreateRequests && (
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button 
+                className="flex items-center space-x-2 space-x-reverse"
+                onClick={() => {
+                  setEditingRequest(null);
+                  setFormData({});
+                }}
+                data-testid="button-add-service-request"
+              >
+                <i className="bi bi-plus-circle"></i>
+                <span>طلب صيانة جديد</span>
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingRequest ? "تعديل طلب الصيانة" : "إضافة طلب صيانة جديد"}</DialogTitle>
@@ -246,6 +280,7 @@ export default function ServiceRequests() {
             </form>
           </DialogContent>
         </Dialog>
+        )}
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -417,24 +452,39 @@ export default function ServiceRequests() {
                     </td>
                     <td className="py-4 px-4">
                       <div className="flex items-center space-x-2 space-x-reverse">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEdit(request)}
-                          className="p-2 text-chart-1 hover:bg-chart-1/10"
-                          data-testid={`button-edit-request-${request.id}`}
-                        >
-                          <i className="bi bi-pencil text-sm"></i>
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDelete(request.id)}
-                          className="p-2 text-destructive hover:bg-destructive/10"
-                          data-testid={`button-delete-request-${request.id}`}
-                        >
-                          <i className="bi bi-trash text-sm"></i>
-                        </Button>
+                        {canUpdateRequests && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEdit(request)}
+                            className="p-2 text-chart-1 hover:bg-chart-1/10"
+                            data-testid={`button-edit-request-${request.id}`}
+                          >
+                            <i className="bi bi-pencil text-sm"></i>
+                          </Button>
+                        )}
+                        {canDeleteRequests && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDelete(request.id)}
+                            className="p-2 text-destructive hover:bg-destructive/10"
+                            data-testid={`button-delete-request-${request.id}`}
+                          >
+                            <i className="bi bi-trash text-sm"></i>
+                          </Button>
+                        )}
+                        {currentUser?.role === 'technician' && request.technicianId === currentUser.id && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleAddFollowUp(request)}
+                            className="p-2 text-blue-600 hover:bg-blue-50"
+                            data-testid={`button-add-followup-${request.id}`}
+                          >
+                            <i className="bi bi-chat-dots text-sm"></i>
+                          </Button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -444,6 +494,46 @@ export default function ServiceRequests() {
           </table>
         </div>
       </Card>
+
+      {/* Follow-up Dialog */}
+      <Dialog open={isFollowUpDialogOpen} onOpenChange={setIsFollowUpDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>إضافة متابعة</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmitFollowUp} className="space-y-4">
+            <div>
+              <Label>تفاصيل المتابعة</Label>
+              <Textarea
+                value={followUpText}
+                onChange={(e) => setFollowUpText(e.target.value)}
+                placeholder="اكتب تفاصيل المتابعة هنا..."
+                required
+                className="text-right min-h-[100px]"
+                data-testid="textarea-followup-text"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                type="submit" 
+                className="flex-1" 
+                disabled={createFollowUpMutation.isPending}
+                data-testid="button-submit-followup"
+              >
+                {createFollowUpMutation.isPending ? "جارٍ الإضافة..." : "إضافة المتابعة"}
+              </Button>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setIsFollowUpDialogOpen(false)}
+                data-testid="button-cancel-followup"
+              >
+                إلغاء
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
