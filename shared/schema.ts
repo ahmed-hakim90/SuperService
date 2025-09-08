@@ -86,6 +86,15 @@ export const serviceRequests = pgTable("service_requests", {
   completedAt: timestamp("completed_at"),
 });
 
+// Service Request Follow-ups table
+export const serviceRequestFollowUps = pgTable("service_request_follow_ups", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  serviceRequestId: uuid("service_request_id").notNull(),
+  technicianId: uuid("technician_id").notNull(),
+  followUpText: text("follow_up_text").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Warehouses table
 export const warehouses = pgTable("warehouses", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),

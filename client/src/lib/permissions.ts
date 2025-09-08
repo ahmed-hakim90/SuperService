@@ -42,8 +42,9 @@ export const rolePermissions: Record<UserRole, Record<string, Permission>> = {
   },
   
   technician: {
-    // Technician can only see assigned service requests and customers
-    serviceRequests: { read: true, create: false, update: true, delete: false }, // Only assigned to them
+    // Technician can only see assigned service requests and add follow-ups
+    serviceRequests: { read: true, create: false, update: false, delete: false }, // Only assigned to them
+    serviceRequestFollowUps: { read: true, create: true, update: false, delete: false }, // Can add follow-ups only
     customers: { read: true, create: false, update: false, delete: false }, // Related to their requests
     categories: { read: true, create: false, update: false, delete: false }, // For reference
   },
