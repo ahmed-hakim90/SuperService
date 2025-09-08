@@ -13,6 +13,7 @@ import {
   insertWarehouseSchema,
   insertSparePartSchema,
   insertInventorySchema,
+  insertProductInventorySchema,
   insertPartsTransferSchema,
   insertActivityLogSchema,
   type User
@@ -873,6 +874,154 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Delete product error:", error);
       res.status(500).json({ message: "خطأ في حذف المنتج" });
+    }
+  });
+
+  // Product Inventory CRUD
+  app.get("/api/product-inventory/:warehouseId", async (req, res) => {
+    try {
+      const currentUser = await getCurrentUser(req);
+      if (!currentUser) {
+        return res.status(401).json({ message: "يجب تسجيل الدخول أولاً" });
+      }
+
+      // Check permissions
+      if (currentUser.role === 'customer') {
+        return res.status(403).json({ message: "ليس لديك صلاحية لعرض المخزون" });
+      }
+
+      // Get warehouse to check permissions
+      const warehouse = await storage.getWarehouse(req.params.warehouseId);
+      if (!warehouse) {
+        return res.status(404).json({ message: "المخزن غير موجود" });
+      }
+
+      // Check if user can access this warehouse
+      if (currentUser.role === 'manager' && warehouse.centerId !== currentUser.centerId) {
+        return res.status(403).json({ message: "ليس لديك صلاحية لعرض مخزون هذا المخزن" });
+      }
+      if (currentUser.role === 'warehouse_manager' && warehouse.managerId !== currentUser.id) {
+        return res.status(403).json({ message: "ليس لديك صلاحية لعرض مخزون هذا المخزن" });
+      }
+
+      const inventory = await storage.getProductInventory(req.params.warehouseId);
+      res.json(inventory);
+    } catch (error) {
+      console.error("Get product inventory error:", error);
+      res.status(500).json({ message: "خطأ في جلب بيانات المخزون" });
+    }
+  });
+
+  app.post("/api/product-inventory", async (req, res) => {
+    try {
+      const currentUser = await getCurrentUser(req);
+      if (!currentUser) {
+        return res.status(401).json({ message: "يجب تسجيل الدخول أولاً" });
+      }
+
+      // Check permissions
+      if (currentUser.role !== 'admin' && currentUser.role !== 'manager' && currentUser.role !== 'warehouse_manager') {
+        return res.status(403).json({ message: "ليس لديك صلاحية لإضافة مخزون" });
+      }
+
+      const inventoryData = insertProductInventorySchema.parse(req.body);
+      
+      // Get warehouse to check permissions
+      const warehouse = await storage.getWarehouse(inventoryData.warehouseId);
+      if (!warehouse) {
+        return res.status(404).json({ message: "المخزن غير موجود" });
+      }
+
+      // Check if user can add to this warehouse
+      if (currentUser.role === 'manager' && warehouse.centerId !== currentUser.centerId) {
+        return res.status(403).json({ message: "ليس لديك صلاحية لإضافة مخزون لهذا المخزن" });
+      }
+      if (currentUser.role === 'warehouse_manager' && warehouse.managerId !== currentUser.id) {
+        return res.status(403).json({ message: "ليس لديك صلاحية لإضافة مخزون لهذا المخزن" });
+      }
+
+      const inventory = await storage.createProductInventory(inventoryData);
+
+      // Log activity
+      await storage.logActivity({
+        userId: currentUser.id,
+        action: "create",
+        entityType: "product_inventory",
+        entityId: inventory.id,
+        description: `تم إضافة مخزون جديد للمنتج في المخزن`
+      });
+
+      res.status(201).json(inventory);
+    } catch (error) {
+      console.error("Create product inventory error:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "بيانات غير صحيحة", errors: error.errors });
+      }
+      res.status(500).json({ message: "خطأ في إضافة المخزون" });
+    }
+  });
+
+  app.put("/api/product-inventory/:id", async (req, res) => {
+    try {
+      const currentUser = await getCurrentUser(req);
+      if (!currentUser) {
+        return res.status(401).json({ message: "يجب تسجيل الدخول أولاً" });
+      }
+
+      // Check permissions
+      if (currentUser.role !== 'admin' && currentUser.role !== 'manager' && currentUser.role !== 'warehouse_manager') {
+        return res.status(403).json({ message: "ليس لديك صلاحية لتحديث المخزون" });
+      }
+
+      const inventoryData = insertProductInventorySchema.partial().parse(req.body);
+      const inventory = await storage.updateProductInventory(req.params.id, inventoryData);
+
+      // Log activity
+      await storage.logActivity({
+        userId: currentUser.id,
+        action: "update",
+        entityType: "product_inventory",
+        entityId: inventory.id,
+        description: `تم تحديث المخزون`
+      });
+
+      res.json(inventory);
+    } catch (error) {
+      console.error("Update product inventory error:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "بيانات غير صحيحة", errors: error.errors });
+      }
+      res.status(500).json({ message: "خطأ في تحديث المخزون" });
+    }
+  });
+
+  app.delete("/api/product-inventory/:id", async (req, res) => {
+    try {
+      const currentUser = await getCurrentUser(req);
+      if (!currentUser) {
+        return res.status(401).json({ message: "يجب تسجيل الدخول أولاً" });
+      }
+
+      // Check permissions - only admin can delete inventory
+      if (currentUser.role !== 'admin') {
+        return res.status(403).json({ message: "ليس لديك صلاحية لحذف المخزون" });
+      }
+
+      await storage.deleteProductInventory(req.params.id);
+
+      // Log activity
+      await storage.logActivity({
+        userId: currentUser.id,
+        action: "delete",
+        entityType: "product_inventory",
+        entityId: req.params.id,
+        description: `تم حذف المخزون`
+      });
+
+      res.json({ message: "تم حذف المخزون بنجاح" });
+    } catch (error) {
+      console.error("Delete product inventory error:", error);
+      res.status(500).json({ message: "خطأ في حذف المخزون" });
     }
   });
 
