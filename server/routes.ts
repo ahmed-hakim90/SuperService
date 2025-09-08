@@ -535,12 +535,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const followUpData = insertServiceRequestFollowUpSchema.parse({
         serviceRequestId: req.params.id,
         technicianId: currentUser.id,
-        followUpText: req.body.followUpText
+        followUpText: req.body.followUpText,
+        newStatus: req.body.newStatus
       });
 
       const followUp = await storage.createServiceRequestFollowUp(followUpData);
 
-      // Log activity
+      // Update service request status if newStatus was provided
+      if (followUpData.newStatus) {
+        const updateData = {
+          status: followUpData.newStatus,
+          updatedAt: new Date(),
+          ...(followUpData.newStatus === 'completed' ? { completedAt: new Date() } : {})
+        };
+        await storage.updateServiceRequest(req.params.id, updateData);
+
+        // Log status change activity
+        const statusText = followUpData.newStatus === 'completed' ? 'مكتمل' : 
+                          followUpData.newStatus === 'in_progress' ? 'قيد التقدم' : 
+                          followUpData.newStatus === 'pending' ? 'في الانتظار' : 'ملغي';
+        await storage.logActivity({
+          userId: currentUser.id,
+          action: "update",
+          entityType: "service_request",
+          entityId: req.params.id,
+          description: `تم تحديث حالة طلب الصيانة ${serviceRequest.requestNumber} إلى ${statusText}`
+        });
+      }
+
+      // Log follow-up activity
       await storage.logActivity({
         userId: currentUser.id,
         action: "create",
