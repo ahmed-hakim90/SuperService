@@ -8,6 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { apiGet, apiPost, apiPut, apiDelete } from "../lib/db";
+import { useAuth } from "../lib/auth";
+import { canCreate, canUpdate, canDelete } from "../lib/permissions";
 import type { User, InsertUser } from "@shared/schema";
 
 export default function Users() {
@@ -19,6 +21,12 @@ export default function Users() {
   const [formData, setFormData] = useState<Partial<InsertUser>>({});
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user: currentUser } = useAuth();
+
+  // Check permissions
+  const canCreateUsers = currentUser ? canCreate(currentUser.role, 'users') : false;
+  const canUpdateUsers = currentUser ? canUpdate(currentUser.role, 'users') : false;
+  const canDeleteUsers = currentUser ? canDelete(currentUser.role, 'users') : false;
 
   const { data: users, isLoading } = useQuery({
     queryKey: ['/api/users'],
@@ -100,19 +108,21 @@ export default function Users() {
           <p className="text-muted-foreground">إدارة حسابات المستخدمين وصلاحياتهم</p>
         </div>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button 
-              className="flex items-center space-x-2 space-x-reverse"
-              onClick={() => {
-                setEditingUser(null);
-                setFormData({});
-              }}
-              data-testid="button-add-user"
-            >
-              <i className="bi bi-plus-circle"></i>
-              <span>إضافة مستخدم</span>
-            </Button>
-          </DialogTrigger>
+          {canCreateUsers && (
+            <DialogTrigger asChild>
+              <Button 
+                className="flex items-center space-x-2 space-x-reverse"
+                onClick={() => {
+                  setEditingUser(null);
+                  setFormData({});
+                }}
+                data-testid="button-add-user"
+              >
+                <i className="bi bi-plus-circle"></i>
+                <span>إضافة مستخدم</span>
+              </Button>
+            </DialogTrigger>
+          )}
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>{editingUser ? "تعديل مستخدم" : "إضافة مستخدم جديد"}</DialogTitle>
@@ -288,24 +298,28 @@ export default function Users() {
                     </td>
                     <td className="py-4 px-4">
                       <div className="flex items-center space-x-2 space-x-reverse">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEdit(user)}
-                          className="p-2 text-chart-1 hover:bg-chart-1/10"
-                          data-testid={`button-edit-user-${user.id}`}
-                        >
-                          <i className="bi bi-pencil text-sm"></i>
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDelete(user.id)}
-                          className="p-2 text-destructive hover:bg-destructive/10"
-                          data-testid={`button-delete-user-${user.id}`}
-                        >
-                          <i className="bi bi-trash text-sm"></i>
-                        </Button>
+                        {canUpdateUsers && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEdit(user)}
+                            className="p-2 text-chart-1 hover:bg-chart-1/10"
+                            data-testid={`button-edit-user-${user.id}`}
+                          >
+                            <i className="bi bi-pencil text-sm"></i>
+                          </Button>
+                        )}
+                        {canDeleteUsers && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDelete(user.id)}
+                            className="p-2 text-destructive hover:bg-destructive/10"
+                            data-testid={`button-delete-user-${user.id}`}
+                          >
+                            <i className="bi bi-trash text-sm"></i>
+                          </Button>
+                        )}
                       </div>
                     </td>
                   </tr>

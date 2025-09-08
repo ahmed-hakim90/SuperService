@@ -9,6 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiGet, apiPost, apiPut, apiDelete } from "../lib/db";
+import { useAuth } from "../lib/auth";
+import { canCreate, canUpdate, canDelete } from "../lib/permissions";
 import type { ServiceRequest, InsertServiceRequest } from "@shared/schema";
 
 export default function ServiceRequests() {
@@ -20,6 +22,12 @@ export default function ServiceRequests() {
   const [formData, setFormData] = useState<Partial<InsertServiceRequest>>({});
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user: currentUser } = useAuth();
+
+  // Check permissions
+  const canCreateRequests = currentUser ? canCreate(currentUser.role, 'serviceRequests') : false;
+  const canUpdateRequests = currentUser ? canUpdate(currentUser.role, 'serviceRequests') : false;
+  const canDeleteRequests = currentUser ? canDelete(currentUser.role, 'serviceRequests') : false;
 
   const { data: serviceRequests, isLoading } = useQuery({
     queryKey: ['/api/service-requests'],
