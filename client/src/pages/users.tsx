@@ -33,6 +33,11 @@ export default function Users() {
     queryFn: () => apiGet('/api/users'),
   });
 
+  const { data: serviceCenters } = useQuery({
+    queryKey: ['/api/service-centers'],
+    queryFn: () => apiGet('/api/service-centers'),
+  });
+
   const createUserMutation = useMutation({
     mutationFn: (data: InsertUser) => apiPost('/api/users', data),
     onSuccess: () => {
@@ -174,6 +179,22 @@ export default function Users() {
                   </SelectContent>
                 </Select>
               </div>
+              {(formData.role === 'manager' || formData.role === 'technician' || formData.role === 'receptionist') && (
+                <div>
+                  <Label>مركز الخدمة</Label>
+                  <Select value={formData.centerId || ""} onValueChange={(value) => setFormData({ ...formData, centerId: value || null })}>
+                    <SelectTrigger data-testid="select-user-center">
+                      <SelectValue placeholder="اختر مركز الخدمة" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">بدون مركز</SelectItem>
+                      {serviceCenters?.map((center: any) => (
+                        <SelectItem key={center.id} value={center.id}>{center.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               {!editingUser && (
                 <div>
                   <Label>كلمة المرور</Label>
@@ -248,8 +269,8 @@ export default function Users() {
               <tr>
                 <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">الاسم</th>
                 <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">البريد الإلكتروني</th>
-                <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">رقم الهاتف</th>
                 <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">الدور</th>
+                <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">مركز الخدمة</th>
                 <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">الحالة</th>
                 <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">الإجراءات</th>
               </tr>
@@ -281,7 +302,6 @@ export default function Users() {
                       </div>
                     </td>
                     <td className="py-4 px-4 text-card-foreground">{user.email}</td>
-                    <td className="py-4 px-4 text-card-foreground">{user.phone}</td>
                     <td className="py-4 px-4">
                       <span className="bg-chart-1/10 text-chart-1 px-2 py-1 rounded-full text-xs font-medium">
                         {user.role === 'admin' ? 'مدير' :
@@ -289,6 +309,13 @@ export default function Users() {
                          user.role === 'technician' ? 'فني' :
                          user.role === 'receptionist' ? 'موظف استقبال' :
                          user.role === 'warehouse_manager' ? 'مدير مخزن' : 'عميل'}
+                      </span>
+                    </td>
+                    <td className="py-4 px-4">
+                      <span className="text-card-foreground">
+                        {user.centerId ? 
+                          serviceCenters?.find((center: any) => center.id === user.centerId)?.name || 'مركز غير محدد'
+                          : 'بدون مركز'}
                       </span>
                     </td>
                     <td className="py-4 px-4">
