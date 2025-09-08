@@ -619,18 +619,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "يجب تسجيل الدخول أولاً" });
       }
 
-      // Check permissions
-      if (currentUser.role !== 'admin' && currentUser.role !== 'manager') {
+      // Check permissions - only admin can create warehouses
+      if (currentUser.role !== 'admin') {
         return res.status(403).json({ message: "ليس لديك صلاحية لإضافة مخازن" });
       }
 
       const warehouseData = insertWarehouseSchema.parse(req.body);
-      
-      // For managers, restrict to their center
-      if (currentUser.role === 'manager') {
-        warehouseData.centerId = currentUser.centerId;
-      }
-      
       const warehouse = await storage.createWarehouse(warehouseData);
 
       // Log activity

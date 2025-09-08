@@ -30,17 +30,15 @@ export const rolePermissions: Record<UserRole, Record<string, Permission>> = {
   },
   
   manager: {
-    // Manager can access their center's data
+    // Manager can access their center's data only
     dashboard: { read: true, create: false, update: false, delete: false },
-    users: { read: true, create: true, update: true, delete: false }, // For their center only
-    centers: { read: true, create: false, update: true, delete: false }, // Their center only
-    warehouses: { read: true, create: true, update: true, delete: false }, // Their center only
-    inventory: { read: true, create: true, update: true, delete: false }, // Their warehouses only
-    customers: { read: true, create: true, update: true, delete: false },
+    warehouses: { read: true, create: false, update: true, delete: false }, // Their center's warehouses only
+    inventory: { read: true, create: true, update: true, delete: false }, // Their center's warehouses only
+    customers: { read: true, create: true, update: true, delete: false }, // Their center only
     categories: { read: true, create: true, update: true, delete: false },
     serviceRequests: { read: true, create: true, update: true, delete: false }, // Their center only
-    transfers: { read: true, create: true, update: true, delete: false }, // Their warehouses only
-    reports: { read: true, create: false, update: false, delete: false },
+    transfers: { read: true, create: true, update: false, delete: false }, // Can only request TO their warehouse
+    reports: { read: true, create: false, update: false, delete: false }, // Their center only
     activities: { read: true, create: false, update: false, delete: false }, // Their center only
   },
   
