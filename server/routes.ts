@@ -370,9 +370,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Filter customers based on role
       if (currentUser.role === 'manager' || currentUser.role === 'receptionist') {
-        // Manager and receptionist can see all customers (no center restriction on customers)
-        // Since customers are not bound to specific centers
-        filteredCustomers = allCustomers;
+        // Manager and receptionist can see customers from their center only
+        filteredCustomers = allCustomers.filter(customer => customer.centerId === currentUser.centerId);
       } else if (currentUser.role === 'technician') {
         // Technician can see customers related to their service requests
         // For now, we'll allow them to see all customers (they might need for creating requests)
@@ -971,8 +970,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Dashboard endpoints
   app.get("/api/dashboard/stats", async (req, res) => {
     try {
+      const currentUser = await getCurrentUser(req);
+      if (!currentUser) {
+        return res.status(401).json({ message: "يجب تسجيل الدخول أولاً" });
+      }
+
       const stats = await storage.getDashboardStats();
-      res.json(stats);
+      
+      // Filter stats for managers to show only their center data
+      if (currentUser.role === 'manager') {
+        const allRequests = await storage.getAllServiceRequests();
+        const allUsers = await storage.getAllUsers();
+        const allCustomers = await storage.getAllCustomers();
+        
+        const centerRequests = allRequests.filter(req => req.centerId === currentUser.centerId);
+        const centerUsers = allUsers.filter(user => user.centerId === currentUser.centerId);
+        
+        const filteredStats = {
+          totalUsers: centerUsers.length,
+          serviceRequests: centerRequests.length,
+          serviceCenters: 1, // Manager only sees their own center
+          revenue: centerRequests.reduce((sum, req) => sum + (req.estimatedCost || 0), 0)
+        };
+        
+        res.json(filteredStats);
+      } else {
+        res.json(stats);
+      }
     } catch (error) {
       console.error("Get dashboard stats error:", error);
       res.status(500).json({ message: "خطأ في جلب إحصائيات لوحة التحكم" });
@@ -981,8 +1005,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/dashboard/recent-requests", async (req, res) => {
     try {
+      const currentUser = await getCurrentUser(req);
+      if (!currentUser) {
+        return res.status(401).json({ message: "يجب تسجيل الدخول أولاً" });
+      }
+
       const recentRequests = await storage.getRecentServiceRequests();
-      res.json(recentRequests);
+      
+      // Filter recent requests based on user role
+      let filteredRequests = recentRequests;
+      if (currentUser.role === 'manager') {
+        filteredRequests = recentRequests.filter(req => req.centerId === currentUser.centerId);
+      } else if (currentUser.role === 'technician') {
+        filteredRequests = recentRequests.filter(req => req.technicianId === currentUser.id);
+      } else if (currentUser.role === 'receptionist') {
+        filteredRequests = recentRequests.filter(req => req.centerId === currentUser.centerId);
+      } else if (currentUser.role === 'customer') {
+        filteredRequests = recentRequests.filter(req => req.customerId === currentUser.id);
+      }
+      
+      res.json(filteredRequests);
     } catch (error) {
       console.error("Get recent requests error:", error);
       res.status(500).json({ message: "خطأ في جلب أحدث طلبات الصيانة" });
@@ -991,8 +1033,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/dashboard/recent-activities", async (req, res) => {
     try {
+      const currentUser = await getCurrentUser(req);
+      if (!currentUser) {
+        return res.status(401).json({ message: "يجب تسجيل الدخول أولاً" });
+      }
+
       const recentActivities = await storage.getRecentActivities();
-      res.json(recentActivities);
+      
+      // Filter activities based on user role
+      let filteredActivities = recentActivities;
+      if (currentUser.role === 'manager') {
+        // For managers, show activities related to their center
+        const allUsers = await storage.getAllUsers();
+        const centerUserIds = allUsers
+          .filter(user => user.centerId === currentUser.centerId)
+          .map(user => user.id);
+        
+        filteredActivities = recentActivities.filter(activity => 
+          centerUserIds.includes(activity.userId)
+        );
+      } else if (currentUser.role === 'technician') {
+        // Technicians see only their own activities
+        filteredActivities = recentActivities.filter(activity => 
+          activity.userId === currentUser.id
+        );
+      } else if (currentUser.role === 'receptionist') {
+        // Receptionists see activities from their center
+        const allUsers = await storage.getAllUsers();
+        const centerUserIds = allUsers
+          .filter(user => user.centerId === currentUser.centerId)
+          .map(user => user.id);
+        
+        filteredActivities = recentActivities.filter(activity => 
+          centerUserIds.includes(activity.userId)
+        );
+      }
+      
+      res.json(filteredActivities);
     } catch (error) {
       console.error("Get recent activities error:", error);
       res.status(500).json({ message: "خطأ في جلب أحدث الأنشطة" });
