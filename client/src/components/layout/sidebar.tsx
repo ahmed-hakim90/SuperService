@@ -1,5 +1,7 @@
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "../../lib/auth";
+import { canAccessPage } from "../../lib/permissions";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -23,17 +25,24 @@ const menuItems = [
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [location, setLocation] = useLocation();
+  const { user } = useAuth();
 
   const handleNavigation = (path: string) => {
     setLocation(path);
     onClose();
   };
 
+  // Filter menu items based on user role
+  const allowedMenuItems = menuItems.filter(item => {
+    if (!user) return false;
+    return canAccessPage(user.role, item.id);
+  });
+
   return (
     <div className={`sidebar fixed right-0 top-16 h-[calc(100vh-4rem)] w-64 bg-card border-l border-border overflow-y-auto transition-transform duration-300 ease-in-out lg:translate-x-0 z-30 ${isOpen ? 'open' : ''}`}>
       <div className="p-4">
         <nav className="space-y-2">
-          {menuItems.map((item) => (
+          {allowedMenuItems.map((item) => (
             <Button
               key={item.id}
               variant="ghost"
