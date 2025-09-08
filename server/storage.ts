@@ -174,6 +174,7 @@ export class MemStorage implements IStorage {
         phone: "+966501111111",
         email: "khalid@gmail.com",
         address: "حي الملز، الرياض",
+        centerId: "center-1",
         createdAt: new Date("2024-03-01"),
         updatedAt: new Date("2024-03-01")
       },
@@ -183,6 +184,7 @@ export class MemStorage implements IStorage {
         phone: "+966502222222",
         email: "fatima@hotmail.com",
         address: "حي الروضة، جدة",
+        centerId: "center-2",
         createdAt: new Date("2024-03-05"),
         updatedAt: new Date("2024-03-05")
       }

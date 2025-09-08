@@ -44,6 +44,7 @@ export const customers = pgTable("customers", {
   phone: text("phone").notNull(),
   email: text("email"),
   address: text("address"),
+  centerId: uuid("center_id"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
