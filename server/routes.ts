@@ -13,8 +13,69 @@ import {
   insertSparePartSchema,
   insertInventorySchema,
   insertPartsTransferSchema,
-  insertActivityLogSchema
+  insertActivityLogSchema,
+  type User
 } from "@shared/schema";
+
+// Helper function to get current user from session
+async function getCurrentUser(req: any): Promise<User | null> {
+  if (!req.session?.user?.id) {
+    return null;
+  }
+  return await storage.getUser(req.session.user.id) || null;
+}
+
+// Helper function to check if user can access data based on role and center
+function canAccessData(user: User, resourceType: string, data?: any): boolean {
+  if (user.role === 'admin') {
+    return true; // Admin can access everything
+  }
+  
+  // Manager can only access their center's data
+  if (user.role === 'manager') {
+    if (resourceType === 'user' && data?.centerId && data.centerId !== user.centerId) {
+      return false;
+    }
+    if (resourceType === 'serviceRequest' && data?.centerId && data.centerId !== user.centerId) {
+      return false;
+    }
+    if (resourceType === 'warehouse' && data?.centerId && data.centerId !== user.centerId) {
+      return false;
+    }
+  }
+  
+  // Technician can only access their assigned service requests
+  if (user.role === 'technician') {
+    if (resourceType === 'serviceRequest' && data?.technicianId && data.technicianId !== user.id) {
+      return false;
+    }
+  }
+  
+  // Warehouse manager can only access their warehouse data
+  if (user.role === 'warehouse_manager') {
+    if (resourceType === 'warehouse' && data?.managerId && data.managerId !== user.id) {
+      return false;
+    }
+  }
+  
+  // Customer can only access their own data
+  if (user.role === 'customer') {
+    if (resourceType === 'serviceRequest' && data?.customerId && data.customerId !== user.id) {
+      return false;
+    }
+  }
+  
+  return true;
+}
+
+// Helper function to filter data based on user role
+function filterDataForUser(user: User, resourceType: string, data: any[]): any[] {
+  if (user.role === 'admin') {
+    return data; // Admin sees everything
+  }
+  
+  return data.filter(item => canAccessData(user, resourceType, item));
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication routes
@@ -91,8 +152,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Users CRUD
   app.get("/api/users", async (req, res) => {
     try {
-      const users = await storage.getAllUsers();
-      res.json(users);
+      const currentUser = await getCurrentUser(req);
+      if (!currentUser) {
+        return res.status(401).json({ message: "يجب تسجيل الدخول أولاً" });
+      }
+
+      const allUsers = await storage.getAllUsers();
+      let filteredUsers = allUsers;
+
+      // Filter users based on role
+      if (currentUser.role === 'manager') {
+        // Manager can only see users in their center
+        filteredUsers = allUsers.filter(user => user.centerId === currentUser.centerId);
+      } else if (currentUser.role !== 'admin') {
+        // Non-admin and non-manager roles cannot view other users
+        return res.status(403).json({ message: "ليس لديك صلاحية لعرض المستخدمين" });
+      }
+
+      res.json(filteredUsers);
     } catch (error) {
       console.error("Get users error:", error);
       res.status(500).json({ message: "خطأ في جلب بيانات المستخدمين" });
@@ -279,8 +356,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Customers CRUD
   app.get("/api/customers", async (req, res) => {
     try {
-      const customers = await storage.getAllCustomers();
-      res.json(customers);
+      const currentUser = await getCurrentUser(req);
+      if (!currentUser) {
+        return res.status(401).json({ message: "يجب تسجيل الدخول أولاً" });
+      }
+
+      const allCustomers = await storage.getAllCustomers();
+      let filteredCustomers = allCustomers;
+
+      // Filter customers based on role
+      if (currentUser.role === 'manager' || currentUser.role === 'receptionist') {
+        // Manager and receptionist can see all customers (no center restriction on customers)
+        // Since customers are not bound to specific centers
+        filteredCustomers = allCustomers;
+      } else if (currentUser.role === 'technician') {
+        // Technician can see customers related to their service requests
+        // For now, we'll allow them to see all customers (they might need for creating requests)
+        filteredCustomers = allCustomers;
+      } else if (currentUser.role === 'customer') {
+        // Customer can only see their own data
+        filteredCustomers = allCustomers.filter(customer => customer.id === currentUser.id);
+      } else if (currentUser.role === 'warehouse_manager') {
+        // Warehouse manager doesn't need customer access
+        return res.status(403).json({ message: "ليس لديك صلاحية لعرض العملاء" });
+      }
+
+      res.json(filteredCustomers);
     } catch (error) {
       console.error("Get customers error:", error);
       res.status(500).json({ message: "خطأ في جلب بيانات العملاء" });
@@ -357,6 +458,156 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Delete customer error:", error);
       res.status(500).json({ message: "خطأ في حذف العميل" });
+    }
+  });
+
+  // Warehouses CRUD
+  app.get("/api/warehouses", async (req, res) => {
+    try {
+      const currentUser = await getCurrentUser(req);
+      if (!currentUser) {
+        return res.status(401).json({ message: "يجب تسجيل الدخول أولاً" });
+      }
+
+      const allWarehouses = await storage.getAllWarehouses();
+      let filteredWarehouses = allWarehouses;
+
+      // Filter warehouses based on role
+      if (currentUser.role === 'manager') {
+        // Manager can only see warehouses in their center
+        filteredWarehouses = allWarehouses.filter(warehouse => warehouse.centerId === currentUser.centerId);
+      } else if (currentUser.role === 'warehouse_manager') {
+        // Warehouse manager can only see warehouses they manage
+        filteredWarehouses = allWarehouses.filter(warehouse => warehouse.managerId === currentUser.id);
+      } else if (currentUser.role !== 'admin') {
+        // Other roles cannot access warehouses
+        return res.status(403).json({ message: "ليس لديك صلاحية لعرض المخازن" });
+      }
+
+      res.json(filteredWarehouses);
+    } catch (error) {
+      console.error("Get warehouses error:", error);
+      res.status(500).json({ message: "خطأ في جلب بيانات المخازن" });
+    }
+  });
+
+  app.post("/api/warehouses", async (req, res) => {
+    try {
+      const currentUser = await getCurrentUser(req);
+      if (!currentUser) {
+        return res.status(401).json({ message: "يجب تسجيل الدخول أولاً" });
+      }
+
+      // Check permissions
+      if (currentUser.role !== 'admin' && currentUser.role !== 'manager') {
+        return res.status(403).json({ message: "ليس لديك صلاحية لإضافة مخازن" });
+      }
+
+      const warehouseData = insertWarehouseSchema.parse(req.body);
+      
+      // For managers, restrict to their center
+      if (currentUser.role === 'manager') {
+        warehouseData.centerId = currentUser.centerId;
+      }
+      
+      const warehouse = await storage.createWarehouse(warehouseData);
+
+      // Log activity
+      await storage.logActivity({
+        userId: currentUser.id,
+        action: "create",
+        entityType: "warehouse",
+        entityId: warehouse.id,
+        description: `تم إضافة مخزن جديد: ${warehouse.name}`
+      });
+
+      res.status(201).json(warehouse);
+    } catch (error) {
+      console.error("Create warehouse error:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "بيانات غير صحيحة", errors: error.errors });
+      }
+      res.status(500).json({ message: "خطأ في إضافة المخزن" });
+    }
+  });
+
+  app.put("/api/warehouses/:id", async (req, res) => {
+    try {
+      const currentUser = await getCurrentUser(req);
+      if (!currentUser) {
+        return res.status(401).json({ message: "يجب تسجيل الدخول أولاً" });
+      }
+
+      const warehouse = await storage.getWarehouse(req.params.id);
+      if (!warehouse) {
+        return res.status(404).json({ message: "المخزن غير موجود" });
+      }
+
+      // Check permissions
+      if (currentUser.role === 'manager' && warehouse.centerId !== currentUser.centerId) {
+        return res.status(403).json({ message: "ليس لديك صلاحية لتعديل هذا المخزن" });
+      }
+      if (currentUser.role === 'warehouse_manager' && warehouse.managerId !== currentUser.id) {
+        return res.status(403).json({ message: "ليس لديك صلاحية لتعديل هذا المخزن" });
+      }
+      if (currentUser.role !== 'admin' && currentUser.role !== 'manager' && currentUser.role !== 'warehouse_manager') {
+        return res.status(403).json({ message: "ليس لديك صلاحية لتعديل المخازن" });
+      }
+
+      const warehouseData = insertWarehouseSchema.partial().parse(req.body);
+      const updatedWarehouse = await storage.updateWarehouse(req.params.id, warehouseData);
+
+      // Log activity
+      await storage.logActivity({
+        userId: currentUser.id,
+        action: "update",
+        entityType: "warehouse",
+        entityId: updatedWarehouse.id,
+        description: `تم تحديث المخزن: ${updatedWarehouse.name}`
+      });
+
+      res.json(updatedWarehouse);
+    } catch (error) {
+      console.error("Update warehouse error:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "بيانات غير صحيحة", errors: error.errors });
+      }
+      res.status(500).json({ message: "خطأ في تحديث المخزن" });
+    }
+  });
+
+  app.delete("/api/warehouses/:id", async (req, res) => {
+    try {
+      const currentUser = await getCurrentUser(req);
+      if (!currentUser) {
+        return res.status(401).json({ message: "يجب تسجيل الدخول أولاً" });
+      }
+
+      const warehouse = await storage.getWarehouse(req.params.id);
+      if (!warehouse) {
+        return res.status(404).json({ message: "المخزن غير موجود" });
+      }
+
+      // Check permissions - only admin can delete warehouses
+      if (currentUser.role !== 'admin') {
+        return res.status(403).json({ message: "ليس لديك صلاحية لحذف المخازن" });
+      }
+
+      await storage.deleteWarehouse(req.params.id);
+
+      // Log activity
+      await storage.logActivity({
+        userId: currentUser.id,
+        action: "delete",
+        entityType: "warehouse",
+        entityId: req.params.id,
+        description: `تم حذف المخزن: ${warehouse.name}`
+      });
+
+      res.json({ message: "تم حذف المخزن بنجاح" });
+    } catch (error) {
+      console.error("Delete warehouse error:", error);
+      res.status(500).json({ message: "خطأ في حذف المخزن" });
     }
   });
 
@@ -531,8 +782,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Service Requests CRUD
   app.get("/api/service-requests", async (req, res) => {
     try {
-      const serviceRequests = await storage.getAllServiceRequests();
-      res.json(serviceRequests);
+      const currentUser = await getCurrentUser(req);
+      if (!currentUser) {
+        return res.status(401).json({ message: "يجب تسجيل الدخول أولاً" });
+      }
+
+      const allRequests = await storage.getAllServiceRequests();
+      let filteredRequests = allRequests;
+
+      // Filter service requests based on role
+      if (currentUser.role === 'manager') {
+        // Manager can only see requests from their center
+        filteredRequests = allRequests.filter(req => req.centerId === currentUser.centerId);
+      } else if (currentUser.role === 'technician') {
+        // Technician can only see requests assigned to them
+        filteredRequests = allRequests.filter(req => req.technicianId === currentUser.id);
+      } else if (currentUser.role === 'receptionist') {
+        // Receptionist can see requests from their center
+        filteredRequests = allRequests.filter(req => req.centerId === currentUser.centerId);
+      } else if (currentUser.role === 'customer') {
+        // Customer can only see their own requests
+        filteredRequests = allRequests.filter(req => req.customerId === currentUser.id);
+      } else if (currentUser.role === 'warehouse_manager') {
+        // Warehouse manager cannot see service requests
+        return res.status(403).json({ message: "ليس لديك صلاحية لعرض طلبات الصيانة" });
+      }
+
+      res.json(filteredRequests);
     } catch (error) {
       console.error("Get service requests error:", error);
       res.status(500).json({ message: "خطأ في جلب بيانات طلبات الصيانة" });
