@@ -13,6 +13,10 @@
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
     "@jridgewell/trace-mapping": "^0.3.25",
+<<<<<<< HEAD
+=======
+    "@supabase/supabase-js": "^0.10.4",
+>>>>>>> 2d9affa43e02d1a5ca538cc8e743e8e777589c88
     "@radix-ui/react-accordion": "^1.2.4",
     "@radix-ui/react-alert-dialog": "^1.1.7",
     "@radix-ui/react-aspect-ratio": "^1.1.3",
