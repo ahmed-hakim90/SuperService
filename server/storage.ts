@@ -318,6 +318,46 @@ export class MemStorage implements IStorage {
       }
     ];
 
+    // Sample Product Inventory
+    const sampleProductInventory: ProductInventory[] = [
+      {
+        id: "inv-prod-1",
+        warehouseId: "warehouse-1",
+        productId: "prod-1",
+        quantity: 15,
+        minQuantity: 5,
+        lastRestockDate: new Date("2024-08-15"),
+        updatedAt: new Date("2024-09-01")
+      },
+      {
+        id: "inv-prod-2",
+        warehouseId: "warehouse-1",
+        productId: "prod-2",
+        quantity: 8,
+        minQuantity: 3,
+        lastRestockDate: new Date("2024-08-20"),
+        updatedAt: new Date("2024-09-01")
+      },
+      {
+        id: "inv-prod-3",
+        warehouseId: "warehouse-2",
+        productId: "prod-1",
+        quantity: 12,
+        minQuantity: 5,
+        lastRestockDate: new Date("2024-08-10"),
+        updatedAt: new Date("2024-08-28")
+      },
+      {
+        id: "inv-prod-4",
+        warehouseId: "warehouse-2",
+        productId: "prod-2",
+        quantity: 5,
+        minQuantity: 3,
+        lastRestockDate: new Date("2024-08-25"),
+        updatedAt: new Date("2024-08-28")
+      }
+    ];
+
     // Populate maps
     sampleUsers.forEach(user => this.users.set(user.id, user));
     sampleCenters.forEach(center => this.serviceCenters.set(center.id, center));
@@ -327,6 +367,7 @@ export class MemStorage implements IStorage {
     sampleWarehouses.forEach(warehouse => this.warehouses.set(warehouse.id, warehouse));
     sampleRequests.forEach(request => this.serviceRequests.set(request.id, request));
     sampleActivities.forEach(activity => this.activityLogs.set(activity.id, activity));
+    sampleProductInventory.forEach(inventory => this.productInventory.set(inventory.id, inventory));
   }
 
   // Users
@@ -680,6 +721,53 @@ export class MemStorage implements IStorage {
     };
     this.activityLogs.set(activity.id, activity);
     return activity;
+  }
+
+  // Product Inventory
+  async getProductInventory(warehouseId: string): Promise<ProductInventory[]> {
+    return Array.from(this.productInventory.values())
+      .filter(inventory => inventory.warehouseId === warehouseId)
+      .sort((a, b) => new Date(b.updatedAt!).getTime() - new Date(a.updatedAt!).getTime());
+  }
+
+  async getProductInventoryByProduct(productId: string): Promise<ProductInventory[]> {
+    return Array.from(this.productInventory.values())
+      .filter(inventory => inventory.productId === productId)
+      .sort((a, b) => new Date(b.updatedAt!).getTime() - new Date(a.updatedAt!).getTime());
+  }
+
+  async getProductInventoryItem(warehouseId: string, productId: string): Promise<ProductInventory | undefined> {
+    return Array.from(this.productInventory.values())
+      .find(inventory => inventory.warehouseId === warehouseId && inventory.productId === productId);
+  }
+
+  async createProductInventory(inventoryData: InsertProductInventory): Promise<ProductInventory> {
+    const inventory: ProductInventory = {
+      id: generateId(),
+      ...inventoryData,
+      minQuantity: inventoryData.minQuantity ?? 5,
+      lastRestockDate: null,
+      updatedAt: new Date()
+    };
+    this.productInventory.set(inventory.id, inventory);
+    return inventory;
+  }
+
+  async updateProductInventory(id: string, inventoryData: Partial<InsertProductInventory>): Promise<ProductInventory> {
+    const existingInventory = this.productInventory.get(id);
+    if (!existingInventory) throw new Error('Product inventory not found');
+    
+    const updatedInventory: ProductInventory = {
+      ...existingInventory,
+      ...inventoryData,
+      updatedAt: new Date()
+    };
+    this.productInventory.set(id, updatedInventory);
+    return updatedInventory;
+  }
+
+  async deleteProductInventory(id: string): Promise<void> {
+    this.productInventory.delete(id);
   }
 }
 
