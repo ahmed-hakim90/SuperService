@@ -163,7 +163,7 @@ export default function ServiceRequests() {
             {currentUser?.role === 'customer' ? 'متابعة طلبات الصيانة الخاصة بك' : 'إدارة ومتابعة طلبات الصيانة'}
           </p>
         </div>
-        {canCreateRequests && (
+        {canCreateRequests && currentUser?.role !== 'customer' && (
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
               <Button 
