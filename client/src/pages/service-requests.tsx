@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiGet, apiPost, apiPut, apiDelete } from "../lib/db";
 import { useAuth } from "../lib/auth";
 import { canCreate, canUpdate, canDelete } from "../lib/permissions";
+import { StatusProgress, StatusBadge } from "@/components/ui/status-progress";
 import type { ServiceRequest, InsertServiceRequest } from "@shared/schema";
 
 export default function ServiceRequests() {
@@ -448,11 +449,7 @@ export default function ServiceRequests() {
                       <p className="text-sm text-card-foreground">{request.issue}</p>
                     </td>
                     <td className="py-4 px-4">
-                      <span className={`status-badge status-${request.status === 'in_progress' ? 'in-progress' : request.status}`}>
-                        {request.status === 'pending' ? 'في الانتظار' :
-                         request.status === 'in_progress' ? 'قيد التنفيذ' :
-                         request.status === 'completed' ? 'مكتمل' : 'ملغي'}
-                      </span>
+                      <StatusBadge status={request.status as any} animate={true} />
                     </td>
                     <td className="py-4 px-4">
                       <span className="text-sm text-muted-foreground">
