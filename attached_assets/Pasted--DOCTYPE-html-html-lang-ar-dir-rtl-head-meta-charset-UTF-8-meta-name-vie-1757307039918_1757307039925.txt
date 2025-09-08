@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام إدارة مراكز صيانة سوكاني</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+        }
+        
+        .sidebar {
+            background-color: var(--secondary-color);
+            color: white;
+            height: 100vh;
+            position: fixed;
+            padding-top: 60px;
+            width: 250px;
+            overflow-y: auto;
+        }
+        
+        .sidebar a {
+            color: white;
+            text-decoration: none;
+            padding: 10px 15px;
+            display: block;
+            border-right: 3px solid transparent;
+        }
+        
+        .sidebar a:hover, .sidebar a.active {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-right-color: var(--primary-color);
+        }
+        
+        .main-content {
+            margin-right: 250px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+        
+        .navbar {
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 10px 20px;
+        }
+        
+        .card {
+            margin-bottom: 20px;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .stats-card {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .stats-number {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        .login-container {
+            max-width: 400px;
+            margin: 100px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .btn-primary:hover {
+            background-color: #2980b9;
+            border-color: #2980b9;
+        }
+        
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background-color: red;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .page-content {
+            display: none;
+        }
+        
+        .page-content.active {
+            display: block;
+        }
+        
+        .table-responsive {
+            border-radius: 5px;
+        }
+        
+        .form-section {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .card-header {
+            background-color: rgba(52, 152, 219, 0.1);
+            font-weight: bold;
+        }
+        
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+        }
+        
+        .status-pending {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-in-progress {
+            background-color: #cce5ff;
+            color: #004085;
+        }
+        
+        .status-completed {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .status-cancelled {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 70px;
+                text-align: center;
+            }
+            
+            .sidebar span {
+                display: none;
+            }
+            
+            .main-content {
+                margin-right: 70px;
+            }
+            
+            .sidebar a {
+                padding: 15px 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- صفحة تسجيل الدخول -->
+    <div id="login-page" class="container">
+        <div class="login-container">
+            <div class="text-center mb-4">
+                <img src="https://via.placeholder.com/100x50?text=Sokany-EG" alt="Sokany Logo" class="mb-3">
+                <h2>تسجيل الدخول</h2>
+            </div>
+            <form id="login-form">
+                <div class="mb-3">
+                    <label for="email" class="form-label">البريد الإلكتروني</label>
+                    <input type="email" class="form-control" id="email" required>
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">كلمة المرور</label>
+                    <input type="password" class="form-control" id="password" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">تسجيل الدخول</button>
+            </form>
+            <p class="mt-3 text-center">
+                ليس لديك حساب؟ <a href="#" id="show-signup">إنشاء حساب</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- صفحة التسجيل -->
+    <div id="signup-page" class="container" style="display: none;">
+        <div class="login-container">
+            <div class="text-center mb-4">
+                <img src="https://via.placeholder.com/100x50?text=Sokany-EG" alt="Sokany Logo" class="mb-3">
+                <h2>إنشاء حساب جديد</h2>
+            </div>
+            <form id="signup-form">
+                <div class="mb-3">
+                    <label for="signup-name" class="form-label">الاسم بالكامل</label>
+                    <input type="text" class="form-control" id="signup-name" required>
+                </div>
+                <div class="mb-3">
+                    <label for="signup-phone" class="form-label">رقم الهاتف</label>
+                    <input type="tel" class="form-control" id="signup-phone" required>
+                </div>
+                <div class="mb-3">
+                    <label for="signup-address" class="form-label">العنوان</label>
+                    <textarea class="form-control" id="signup-address" rows="2"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="signup-email" class="form-label">البريد الإلكتروني</label>
+                    <input type="email" class="form-control" id="signup-email" required>
+                </div>
+                <div class="mb-3">
+                    <label for="signup-password" class="form-label">كلمة المرور</label>
+                    <input type="password" class="form-control" id="signup-password" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">إنشاء حساب</button>
+            </form>
+            <p class="mt-3 text-center">
+                لديك حساب بالفعل؟ <a href="#" id="show-login">تسجيل الدخول</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- صفحة الانتظار بعد التسجيل -->
+    <div id="waiting-page" class="container" style="display: none;">
+        <div class="login-container text-center">
+            <img src="https://via.placeholder.com/100x50?text=Sokany-EG" alt="Sokany Logo" class="mb-3">
+            <h2 class="text-center mb-4">Sokany - Eg</h2>
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> سوف يتم التواصل معك في أقرب وقت
+            </div>
+            <p>تم استلام طلب إنشاء حسابك بنجاح وسيتم مراجعته من قبل المسؤول</p>
+            <button class="btn btn-secondary mt-3" id="back-to-login">العودة إلى تسجيل الدخول</button>
+        </div>
+    </div>
+
+    <!-- لوحة التحكم (ستظهر بعد تسجيل الدخول) -->
+    <div id="dashboard" style="display: none;">
+        <!-- شريط التنقل العلوي -->
+        <nav class="navbar navbar-expand-lg navbar-light">
+            <div class="container-fluid">
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <a class="navbar-brand" href="#">
+                    <img src="https://via.placeholder.com/120x30?text=Sokany-EG" alt="Logo" height="30" class="d-inline-block align-text-top">
+                </a>
+                <div class="collapse navbar-collapse" id="navbarContent">
+                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-person-circle"></i> محمد أحمد
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#"><i class="bi bi-person"></i> الملف الشخصي</a></li>
+                                <li><a class="dropdown-item" href="#"><i class="bi bi-gear"></i> الإعدادات</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="#" id="logout"><i class="bi bi-box-arrow-left"></i> تسجيل الخروج</a></li>
+                            </ul>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link position-relative" href="#" id="notifications-btn">
+                                <i class="bi bi-bell"></i>
+                                <span class="notification-badge">3</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <!-- الشريط الجانبي -->
+        <div class="sidebar">
+            <a href="#" class="nav-link active" data-page="dashboard-page">
+                <i class="bi bi-speedometer2"></i> <span>لوحة التحكم</span>
+            </a>
+            <a href="#" class="nav-link" data-page="users-page">
+                <i class="bi bi-people"></i> <span>المستخدمين</span>
+            </a>
+            <a href="#" class="nav-link" data-page="roles-page">
+                <i class="bi bi-shield-check"></i> <span>الأدوار والصلاحيات</span>
+            </a>
+            <a href="#" class="nav-link" data-page="centers-page">
+                <i class="bi bi-building"></i> <span>مراكز الخدمة</span>
+            </a>
+            <a href="#" class="nav-link" data-page="warehouses-page">
+                <i class="bi bi-shop"></i> <span>المخازن</span>
+            </a>
+            <a href="#" class="nav-link" data-page="customers-page">
+                <i class="bi bi-person-badge"></i> <span>العملاء</span>
+            </a>
+            <a href="#" class="nav-link" data-page="categories-page">
+                <i class="bi bi-diagram-3"></i> <span>الفئات والمنتجات</span>
+            </a>
+            <a href="#" class="nav-link" data-page="service-requests-page">
+                <i class="bi bi-tools"></i> <span>طلبات الصيانة</span>
+            </a>
+            <a href="#" class="nav-link" data-page="transfers-page">
+                <i class="bi bi-arrow-left-right"></i> <span>تحويل قطع الغيار</span>
+            </a>
+            <a href="#" class="nav-link" data-page="reports-page">
+                <i class="bi bi-graph-up"></i> <span>التقارير</span>
+            </a>
+            <a href="#" class="nav-link" data-page="activities-page">
+                <i class="bi bi-clock-history"></i> <span>سجل الأنشطة</span>
+            </a>
+            <a href="#" class="nav-link" data-page="settings-page">
+                <i class="bi bi-gear"></i> <span>الإعدادات</span>
+            </a>
+        </div>
+
+        <!-- المحتوى الرئيسي -->
+        <div class="main-content">
+            <!-- صفحة لوحة التحكم -->
+            <div id="dashboard-page" class="page-content active">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3>لوحة التحكم</h3>
+                    <div>
+                        <button class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> طلب صيانة جديد
+                        </button>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="card stats-card">
+                            <i class="bi bi-tools fs-1 text-primary"></i>
+                            <div class="stats-number">24</div>
+                            <div class="stats-label">طلبات الصيانة النشطة</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card stats-card">
+                            <i class="bi bi-people fs-1 text-success"></i>
+                            <div class="stats-number">156</div>
+                            <div class="stats-label">إجمالي العملاء</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card stats-card">
+                            <i class="bi bi-arrow-left-right fs-1 text-warning"></i>
+                            <div class="stats-number">8</div>
+                            <div class="stats-label">طلبات التحويل</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card stats-card">
+                            <i class="bi bi-cash-coin fs-1 text-info"></i>
+                            <div class="stats-number">12,850</div>
+                            <div class="stats-label">إجمالي المبيعات (ج.م)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>آخر طلبات الصيانة</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="list-group">
+                                    <a href="#" class="list-group-item list-group-item-action">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1">صيانة ثلاجة - أحمد محمد</h6>
+                                            <small>منذ ساعتين</small>
+                                        </div>
+                                        <p class="mb-1">جاري الفحص</p>
+                                        <small>المركز الرئيسي</small>
+                                    </a>
+                                    <a href="#" class="list-group-item list-group-item-action">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1">صيانة غسالة - سارة علي</h6>
+                                            <small>منذ 5 ساعات</small>
+                                        </div>
+                                        <p class="mb-1">جاري الصيانة</p>
+                                        <small>فرع مدينة نصر</small>
+                                    </a>
+                                    <a href="#" class="list-group-item list-group-item-action">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1">صيانة تكييف - محمود عبد الله</h6>
+                                            <small>منذ يوم</small>
+                                        </div>
+                                        <p class="mb-1">بانتظار قطع الغيار</p>
+                                        <small>المركز الرئيسي</small>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>آخر الأنشطة</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="list-group">
+                                    <a href="#" class="list-group-item list-group-item-action">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1">تم إنشاء طلب صيانة جديد</h6>
+                                            <small>منذ 30 دقيقة</small>
+                                        </div>
+                                        <p class="mb-1">بواسطة: أحمد محمود</p>
+                                    </a>
+                                    <a href="#" class="list-group-item list-group-item-action">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1">تم تحديث حالة طلب الصيانة #245</h6>
+                                            <small>منذ ساعة</small>
+                                        </div>
+                                        <p class="mb-1">بواسطة: محمد علي</p>
+                                    </a>
+                                    <a href="#" class="list-group-item list-group-item-action">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1">تم إنشاء طلب تحويل قطع غيار</h6>
+                                            <small>منذ ساعتين</small>
+                                        </div>
+                                        <p class="mb-1">بواسطة: مركز مدينة نصر</p>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- صفحة المستخدمين -->
+            <div id="users-page" class="page-content">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3>إدارة المستخدمين</h3>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                        <i class="bi bi-plus-circle"></i> إضافة مستخدم
+                    </button>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h5>قائمة المستخدمين</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>الاسم</th>
+                                        <th>البريد الإلكتروني</th>
+                                        <th>رقم الهاتف</th>
+                                        <th>الدور</th>
+                                        <th>الحالة</th>
+                                        <th>الإجراءات</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>1</td>
+                                        <td>محمد أحمد</td>
+                                        <td>mohamed@example.com</td>
+                                        <td>0123456789</td>
+                                        <td><span class="badge bg-primary">مسؤول النظام</span></td>
+                                        <td><span class="badge bg-success">نشط</span></td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></button>
+                                            <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>2</td>
+                                        <td>أحمد محمود</td>
+                                        <td>ahmed@example.com</td>
+                                        <td>0123456788</td>
+                                        <td><span class="badge bg-info">مدير مركز</span></td>
+                                        <td><span class="badge bg-success">نشط</span></td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></button>
+                                            <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>3</td>
+                                        <td>سارة علي</td>
+                                        <td>sara@example.com</td>
+                                        <td>0123456787</td>
+                                        <td><span class="badge bg-warning text-dark">فني صيانة</span></td>
+                                        <td><span class="badge bg-success">نشط</span></td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></button>
+                                            <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>4</td>
+                                        <td>محمود عبد الله</td>
+                                        <td>mahmoud@example.com</td>
+                                        <td>0123456786</td>
+                                        <td><span class="badge bg-secondary">موظف استقبال</span></td>
+                                        <td><span class="badge bg-success">نشط</span></td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></button>
+                                            <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>5</td>
+                                        <td>علي حسن</td>
+                                        <td>ali@example.com</td>
+                                        <td>0123456785</td>
+                                        <td><span class="badge bg-success">مدير مخزن</span></td>
+                                        <td><span class="badge bg-secondary">غير نشط</span></td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></button>
+                                            <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- صفحة الأدوار والصلاحيات -->
+            <div id="roles-page" class="page-content">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3>إدارة الأدوار والصلاحيات</h3>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addRoleModal">
+                        <i class="bi bi-plus-circle"></i> إضافة دور جديد
+                    </button>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-5">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>قائمة الأدوار</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="list-group">
+                                    <a href="#" class="list-group-item list-group-item-action active">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1">مسؤول النظام</h6>
+                                            <span class="badge bg-primary">5 مستخدمين</span>
+                                        </div>
+                                        <p class="mb-1">صلاحيات كاملة على النظام</p>
+                                    </a>
+                                    <a href="#" class="list-group-item list-group-item-action">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1">مدير مركز</h6>
+                                            <span class="badge bg-info">12 مستخدم</span>
+                                        </div>
+                                        <p class="mb-1">إدارة مركز محدد والموظفين به</p>
+                                    </a>
+                                    <a href="#" class="list-group-item list-group-item-action">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1">فني صيانة</h6>
+                                            <span class="badge bg-warning text-dark">25 مستخدم</span>
+                                        </div>
+                                        <p class="mb-1">إدارة وتحديث طلبات الصيانة</p>
+                                    </a>
+                                    <a href="#" class="list-group-item list-group-item-action">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1">موظف استقبال</h6>
+                                            <span class="badge bg-secondary">15 مستخدم</span>
+                                        </div>
+                                        <p class="mb-1">إضافة العملاء وطلبات الصيانة</p>
+                                    </a>
+                                    <a href="#" class="list-group-item list-group-item-action">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1">مدير مخزن</h6>
+                                            <span class="badge bg-success">8 مستخدمين</span>
+                                        </div>
+                                        <p class="mb-1">إدارة المخزون وطلبات التحويل</p>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-7">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>صلاحيات دور: مسؤول النظام</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-section">
+                                            <h6>صلاحيات المستخدمين</h6>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" checked>
+                                                <label class="form-check-label">عرض المستخدمين</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" checked>
+                                                <label class="form-check-label">إضافة مستخدمين</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" checked>
+                                                <label class="form-check-label">تعديل المستخدمين</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" checked>
+                                                <label class="form-check-label">حذف المستخدمين</label>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-section">
+                                            <h6>صلاحيات المراكز</h6>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" checked>
+                                                <label class="form-check-label">عرض المراكز</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" checked>
+                                                <label class="form-check-label">إضافة مراكز</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" checked>
+                                                <label class="form-check-label">تعديل المراكز</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-section">
+                                            <h6>صلاحيات العملاء</h6>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" checked>
+                                                <label class="form-check-label">عرض العملاء</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" checked>
+                                                <label class="form-check-label">إضافة عملاء</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" checked>
+                                                <label class="form-check-label">تعديل العملاء</label>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-section">
+                                            <h6>صلاحيات التقارير</h6>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" checked>
+                                                <label class="form-check-label">عرض التقارير</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" checked>
+                                                <label class="form-check-label">تصدير التقارير</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-end mt-3">
+                                    <button class="btn btn-primary">حفظ التعديلات</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- صفحة مراكز الخدمة -->
+            <div id="centers-page" class="page-content">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3>إدارة مراكز الخدمة</h3>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCenterModal">
+                        <i class="bi bi-plus-circle"></i> إضافة مركز جديد
+                    </button>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h5>قائمة مراكز الخدمة</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>اسم المركز</th>
+                                        <th>العنوان</th>
+                                        <th>مدير المركز</th>
+                                        <th>رقم الهاتف</th>
+                                        <th>نوع المركز</th>
+                                        <th>الحالة</th>
+                                        <th>الإجراءات</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>1</td>
+                                        <td>المركز الرئيسي</td>
+                                        <td>القاهرة، مصر</td>
+                                        <td>محمد أحمد</td>
+                                        <td>0223456789</td>
+                                        <td><span class="badge bg-primary">مركز خدمة</span></td>
+                                        <td><span class="badge bg-success">نشط</span></td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></button>
+                                            <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>2</td>
+                                        <td>فرع مدينة نصر</td>
+                                        <td>مدينة نصر، القاهرة</td>
+                                        <td>أحمد محمود</td>
+                                        <td>0223456788</td>
+                                        <td><span class="badge bg-primary">مركز خدمة</span></td>
+                                        <td><span class="badge bg-success">نشط</span></td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></button>
+                                            <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>3</td>
+                                        <td>فرع المعادي</td>
+                                        <td>المعادي، القاهرة</td>
+                                        <td>سارة علي</td>
+                                        <td>0223456787</td>
+                                        <td><span class="badge bg-primary">مركز خدمة</span></td>
+                                        <td><span class="badge bg-secondary">غير نشط</span></td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></button>
+                                            <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- صفحات أخرى سيتم إضافتها هنا بنفس النمط -->
+            <div id="warehouses-page" class="page-content">
+                <h3>إدارة المخازن</h3>
+                <p>هذه الصفحة تحتوي على محتوى إدارة المخازن.</p>
+            </div>
+
+            <div id="customers-page" class="page-content">
+                <h3>إدارة العملاء</h3>
+                <p>هذه الصفحة تحتوي على محتوى إدارة العملاء.</p>
+            </div>
+
+            <div id="categories-page" class="page-content">
+                <h3>إدارة الفئات والمنتجات</h3>
+                <p>هذه الصفحة تحتوي على محتوى إدارة الفئات والمنتجات.</p>
+            </div>
+
+            <div id="service-requests-page" class="page-content">
+                <h3>إدارة طلبات الصيانة</h3>
+                <p>هذه الصفحة تحتوي على محتوى إدارة طلبات الصيانة.</p>
+            </div>
+
+            <div id="transfers-page" class="page-content">
+                <h3>إدارة تحويل قطع الغيار</h3>
+                <p>هذه الصفحة تحتوي على محتوى إدارة تحويل قطع الغيار.</p>
+            </div>
+
+            <div id="reports-page" class="page-content">
+                <h3>التقارير</h3>
+                <p>هذه الصفحة تحتوي على محتوى التقارير.</p>
+            </div>
+
+            <div id="activities-page" class="page-content">
+                <h3>سجل الأنشطة</h3>
+                <p>هذه الصفحة تحتوي على محتوى سجل الأنشطة.</p>
+            </div>
+
+            <div id="settings-page" class="page-content">
+                <h3>الإعدادات</h3>
+                <p>هذه الصفحة تحتوي على محتوى الإعدادات.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- نموذج إضافة مستخدم -->
+    <div class="modal fade" id="addUserModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">إضافة مستخدم جديد</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="mb-3">
+                            <label for="userName" class="form-label">الاسم بالكامل</label>
+                            <input type="text" class="form-control" id="userName">
+                        </div>
+                        <div class="mb-3">
+                            <label for="userEmail" class="form-label">البريد الإلكتروني</label>
+                            <input type="email" class="form-control" id="userEmail">
+                        </div>
+                        <div class="mb-3">
+                            <label for="userPhone" class="form-label">رقم الهاتف</label>
+                            <input type="tel" class="form-control" id="userPhone">
+                        </div>
+                        <div class="mb-3">
+                            <label for="userRole" class="form-label">الدور</label>
+                            <select class="form-select" id="userRole">
+                                <option value="">اختر الدور</option>
+                                <option value="admin">مسؤول النظام</option>
+                                <option value="center_manager">مدير مركز</option>
+                                <option value="technician">فني صيانة</option>
+                                <option value="reception">موظف استقبال</option>
+                                <option value="warehouse_manager">مدير مخزن</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="userCenter" class="form-label">المركز التابع له</label>
+                            <select class="form-select" id="userCenter">
+                                <option value="">اختر المركز</option>
+                                <option value="1">المركز الرئيسي</option>
+                                <option value="2">فرع مدينة نصر</option>
+                                <option value="3">فرع المعادي</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="button" class="btn btn-primary">حفظ</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // محاكاة للوظائف الأساسية
+        document.addEventListener('DOMContentLoaded', function() {
+            // عناصر الصفحات
+            const loginPage = document.getElementById('login-page');
+            const signupPage = document.getElementById('signup-page');
+            const waitingPage = document.getElementById('waiting-page');
+            const dashboard = document.getElementById('dashboard');
+            
+            // عناصر النماذج
+            const loginForm = document.getElementById('login-form');
+            const signupForm = document.getElementById('signup-form');
+            
+            // روابط التنقل
+            const showSignupLink = document.getElementById('show-signup');
+            const showLoginLink = document.getElementById('show-login');
+            const backToLoginLink = document.getElementById('back-to-login');
+            const logoutLink = document.getElementById('logout');
+            
+            // التنقل بين الصفحات في لوحة التحكم
+            const navLinks = document.querySelectorAll('.sidebar a.nav-link');
+            const pageContents = document.querySelectorAll('.page-content');
+            
+            // عرض صفحة التسجيل
+            showSignupLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                loginPage.style.display = 'none';
+                signupPage.style.display = 'block';
+            });
+            
+            // عرض صفحة تسجيل الدخول
+            showLoginLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                signupPage.style.display = 'none';
+                waitingPage.style.display = 'none';
+                loginPage.style.display = 'block';
+            });
+            
+            // العودة لتسجيل الدخول من صفحة الانتظار
+            backToLoginLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                waitingPage.style.display = 'none';
+                loginPage.style.display = 'block';
+            });
+            
+            // معالجة تسجيل الدخول
+            loginForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                // هنا سيتم الاتصال بـ Supabase للمصادقة
+                loginPage.style.display = 'none';
+                dashboard.style.display = 'block';
+            });
+            
+            // معالجة إنشاء حساب
+            signupForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                // هنا سيتم الاتصال بـ Supabase لإنشاء حساب
+                signupPage.style.display = 'none';
+                waitingPage.style.display = 'block';
+            });
+            
+            // تسجيل الخروج
+            logoutLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                // هنا سيتم الاتصال بـ Supabase لتسجيل الخروج
+                dashboard.style.display = 'none';
+                loginPage.style.display = 'block';
+            });
+            
+            // التنقل بين الصفحات في لوحة التحكم
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // إزالة النشاط من جميع الروابط
+                    navLinks.forEach(l => l.classList.remove('active'));
+                    
+                    // إضافة النشاط للرابط الحالي
+                    this.classList.add('active');
+                    
+                    // إخفاء جميع محتويات الصفحات
+                    pageContents.forEach(page => page.classList.remove('active'));
+                    
+                    // عرض المحتوى المطلوب
+                    const pageId = this.getAttribute('data-page');
+                    document.getElementById(pageId).classList.add('active');
+                });
+            });
+        });
+    </script>
+</body>
+</html>
