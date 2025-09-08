@@ -1254,6 +1254,186 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Data Export/Import endpoints
+  app.get("/api/export", async (req, res) => {
+    try {
+      const currentUser = await getCurrentUser(req);
+      if (!currentUser) {
+        return res.status(401).json({ message: "يجب تسجيل الدخول أولاً" });
+      }
+
+      // Only admin can export all data
+      if (currentUser.role !== 'admin') {
+        return res.status(403).json({ message: "ليس لديك صلاحية لتصدير البيانات" });
+      }
+
+      // Get all data
+      const data = {
+        users: await storage.getAllUsers(),
+        serviceCenters: await storage.getAllServiceCenters(),
+        customers: await storage.getAllCustomers(),
+        categories: await storage.getAllCategories(),
+        products: await storage.getAllProducts(),
+        warehouses: await storage.getAllWarehouses(),
+        serviceRequests: await storage.getAllServiceRequests(),
+        exportDate: new Date().toISOString(),
+        exportedBy: currentUser.fullName
+      };
+
+      // Log activity
+      await storage.logActivity({
+        userId: currentUser.id,
+        action: "export",
+        entityType: "system_data",
+        entityId: null,
+        description: `تم تصدير البيانات بواسطة ${currentUser.fullName}`
+      });
+
+      // Set headers for file download
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', `attachment; filename="sokany-backup-${new Date().toISOString().split('T')[0]}.json"`);
+      res.json(data);
+    } catch (error) {
+      console.error("Export data error:", error);
+      res.status(500).json({ message: "خطأ في تصدير البيانات" });
+    }
+  });
+
+  app.post("/api/import", async (req, res) => {
+    try {
+      const currentUser = await getCurrentUser(req);
+      if (!currentUser) {
+        return res.status(401).json({ message: "يجب تسجيل الدخول أولاً" });
+      }
+
+      // Only admin can import data
+      if (currentUser.role !== 'admin') {
+        return res.status(403).json({ message: "ليس لديك صلاحية لاستيراد البيانات" });
+      }
+
+      const importData = req.body;
+      
+      if (!importData || typeof importData !== 'object') {
+        return res.status(400).json({ message: "بيانات الاستيراد غير صحيحة" });
+      }
+
+      let importedCount = {
+        users: 0,
+        serviceCenters: 0,
+        customers: 0,
+        categories: 0,
+        products: 0,
+        warehouses: 0,
+        serviceRequests: 0
+      };
+
+      // Import service centers first (as they are referenced by other entities)
+      if (importData.serviceCenters && Array.isArray(importData.serviceCenters)) {
+        for (const center of importData.serviceCenters) {
+          try {
+            await storage.createServiceCenter(center);
+            importedCount.serviceCenters++;
+          } catch (e) {
+            console.error("Failed to import center:", e);
+          }
+        }
+      }
+
+      // Import users
+      if (importData.users && Array.isArray(importData.users)) {
+        for (const user of importData.users) {
+          try {
+            // Skip if user already exists
+            const existing = await storage.getUserByEmail(user.email);
+            if (!existing) {
+              await storage.createUser(user);
+              importedCount.users++;
+            }
+          } catch (e) {
+            console.error("Failed to import user:", e);
+          }
+        }
+      }
+
+      // Import customers
+      if (importData.customers && Array.isArray(importData.customers)) {
+        for (const customer of importData.customers) {
+          try {
+            await storage.createCustomer(customer);
+            importedCount.customers++;
+          } catch (e) {
+            console.error("Failed to import customer:", e);
+          }
+        }
+      }
+
+      // Import categories
+      if (importData.categories && Array.isArray(importData.categories)) {
+        for (const category of importData.categories) {
+          try {
+            await storage.createCategory(category);
+            importedCount.categories++;
+          } catch (e) {
+            console.error("Failed to import category:", e);
+          }
+        }
+      }
+
+      // Import products
+      if (importData.products && Array.isArray(importData.products)) {
+        for (const product of importData.products) {
+          try {
+            await storage.createProduct(product);
+            importedCount.products++;
+          } catch (e) {
+            console.error("Failed to import product:", e);
+          }
+        }
+      }
+
+      // Import warehouses
+      if (importData.warehouses && Array.isArray(importData.warehouses)) {
+        for (const warehouse of importData.warehouses) {
+          try {
+            await storage.createWarehouse(warehouse);
+            importedCount.warehouses++;
+          } catch (e) {
+            console.error("Failed to import warehouse:", e);
+          }
+        }
+      }
+
+      // Import service requests
+      if (importData.serviceRequests && Array.isArray(importData.serviceRequests)) {
+        for (const request of importData.serviceRequests) {
+          try {
+            await storage.createServiceRequest(request);
+            importedCount.serviceRequests++;
+          } catch (e) {
+            console.error("Failed to import service request:", e);
+          }
+        }
+      }
+
+      // Log activity
+      await storage.logActivity({
+        userId: currentUser.id,
+        action: "import",
+        entityType: "system_data",
+        entityId: null,
+        description: `تم استيراد البيانات بواسطة ${currentUser.fullName}`
+      });
+
+      res.json({ 
+        message: "تم استيراد البيانات بنجاح",
+        imported: importedCount
+      });
+    } catch (error) {
+      console.error("Import data error:", error);
+      res.status(500).json({ message: "خطأ في استيراد البيانات" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

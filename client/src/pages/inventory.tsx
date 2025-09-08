@@ -201,7 +201,7 @@ export default function Inventory() {
                   <Input
                     id="minQuantity"
                     type="number"
-                    value={formData.minQuantity}
+                    value={formData.minQuantity || 0}
                     onChange={(e) => setFormData({ ...formData, minQuantity: parseInt(e.target.value) || 0 })}
                     required
                   />
@@ -270,7 +270,7 @@ export default function Inventory() {
                     </thead>
                     <tbody>
                       {inventory.map((item: ProductInventory) => {
-                        const isLowStock = item.quantity <= item.minQuantity;
+                        const isLowStock = item.quantity <= (item.minQuantity || 0);
                         const isOutOfStock = item.quantity === 0;
                         return (
                           <tr key={item.id} className="border-b">
