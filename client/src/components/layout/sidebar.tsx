@@ -14,6 +14,7 @@ const menuItems = [
   { id: "roles", path: "/dashboard/roles", icon: "bi-shield-check", label: "الأدوار والصلاحيات" },
   { id: "centers", path: "/dashboard/centers", icon: "bi-building", label: "مراكز الخدمة" },
   { id: "warehouses", path: "/dashboard/warehouses", icon: "bi-shop", label: "المخازن" },
+  { id: "inventory", path: "/dashboard/inventory", icon: "bi-box-seam", label: "المخزون" },
   { id: "customers", path: "/dashboard/customers", icon: "bi-person-badge", label: "العملاء" },
   { id: "categories", path: "/dashboard/categories", icon: "bi-diagram-3", label: "الفئات والمنتجات" },
   { id: "service-requests", path: "/dashboard/service-requests", icon: "bi-tools", label: "طلبات الصيانة" },

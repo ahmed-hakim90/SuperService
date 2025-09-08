@@ -16,6 +16,7 @@ import Centers from "./pages/centers";
 import Warehouses from "./pages/warehouses";
 import Customers from "./pages/customers";
 import Categories from "./pages/categories";
+import Inventory from "./pages/inventory";
 import Transfers from "./pages/transfers";
 import Reports from "./pages/reports";
 import Activities from "./pages/activities";
@@ -59,6 +60,12 @@ function Router() {
       <Route path="/dashboard/warehouses">
         <DashboardLayout>
           <Warehouses />
+        </DashboardLayout>
+      </Route>
+
+      <Route path="/dashboard/inventory">
+        <DashboardLayout>
+          <Inventory />
         </DashboardLayout>
       </Route>
       
