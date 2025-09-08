@@ -23,6 +23,7 @@ export default function ServiceRequests() {
   const [isFollowUpDialogOpen, setIsFollowUpDialogOpen] = useState(false);
   const [selectedRequestForFollowUp, setSelectedRequestForFollowUp] = useState<ServiceRequest | null>(null);
   const [followUpText, setFollowUpText] = useState("");
+  const [newStatus, setNewStatus] = useState<string>("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user: currentUser } = useAuth();
@@ -91,12 +92,13 @@ export default function ServiceRequests() {
   });
 
   const createFollowUpMutation = useMutation({
-    mutationFn: ({ requestId, followUpText }: { requestId: string; followUpText: string }) => 
-      apiPost(`/api/service-requests/${requestId}/follow-ups`, { followUpText }),
+    mutationFn: ({ requestId, followUpText, newStatus }: { requestId: string; followUpText: string; newStatus?: string }) => 
+      apiPost(`/api/service-requests/${requestId}/follow-ups`, { followUpText, newStatus }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/service-requests'] });
       setIsFollowUpDialogOpen(false);
       setFollowUpText("");
+      setNewStatus("");
       setSelectedRequestForFollowUp(null);
       toast({ title: "تم إضافة المتابعة بنجاح" });
     },
@@ -136,7 +138,8 @@ export default function ServiceRequests() {
     if (selectedRequestForFollowUp && followUpText.trim()) {
       createFollowUpMutation.mutate({
         requestId: selectedRequestForFollowUp.id,
-        followUpText: followUpText.trim()
+        followUpText: followUpText.trim(),
+        newStatus: newStatus || undefined
       });
     }
   };
@@ -512,6 +515,20 @@ export default function ServiceRequests() {
                 className="text-right min-h-[100px]"
                 data-testid="textarea-followup-text"
               />
+            </div>
+            <div>
+              <Label>تحديث حالة الطلب (اختياري)</Label>
+              <Select value={newStatus} onValueChange={setNewStatus}>
+                <SelectTrigger data-testid="select-new-status">
+                  <SelectValue placeholder="اختر حالة جديدة للطلب" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">في الانتظار</SelectItem>
+                  <SelectItem value="in_progress">قيد التقدم</SelectItem>
+                  <SelectItem value="completed">مكتمل</SelectItem>
+                  <SelectItem value="cancelled">ملغي</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex gap-2">
               <Button 
