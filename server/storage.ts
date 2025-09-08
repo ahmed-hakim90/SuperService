@@ -147,6 +147,19 @@ export class MemStorage implements IStorage {
         centerId: "center-1",
         createdAt: new Date("2024-02-15"),
         updatedAt: new Date("2024-02-15")
+      },
+      {
+        id: "customer-1",
+        email: "customer@sokany.com",
+        password: "hashed_password",
+        fullName: "خالد السعيد",
+        phone: "+966501111111",
+        address: "حي الملز، الرياض",
+        role: "customer",
+        status: "active",
+        centerId: "center-1",
+        createdAt: new Date("2024-03-01"),
+        updatedAt: new Date("2024-03-01")
       }
     ];
 

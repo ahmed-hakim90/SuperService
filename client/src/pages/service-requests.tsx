@@ -156,8 +156,12 @@ export default function ServiceRequests() {
     <div>
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">طلبات الصيانة</h1>
-          <p className="text-muted-foreground">إدارة ومتابعة طلبات الصيانة</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">
+            {currentUser?.role === 'customer' ? 'طلبات الصيانة الخاصة بي' : 'طلبات الصيانة'}
+          </h1>
+          <p className="text-muted-foreground">
+            {currentUser?.role === 'customer' ? 'متابعة طلبات الصيانة الخاصة بك' : 'إدارة ومتابعة طلبات الصيانة'}
+          </p>
         </div>
         {canCreateRequests && (
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
@@ -346,7 +350,7 @@ export default function ServiceRequests() {
       
       <Card className="mb-6">
         <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className={`grid grid-cols-1 gap-4 ${currentUser?.role === 'customer' ? 'md:grid-cols-3' : 'md:grid-cols-4'}`}>
             <div>
               <Label className="block text-sm font-medium text-card-foreground mb-2">البحث</Label>
               <Input
@@ -372,22 +376,24 @@ export default function ServiceRequests() {
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label className="block text-sm font-medium text-card-foreground mb-2">مركز الخدمة</Label>
-              <Select value={centerFilter} onValueChange={setCenterFilter}>
-                <SelectTrigger data-testid="select-filter-center">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">جميع المراكز</SelectItem>
-                  {centers?.map((center: any) => (
-                    <SelectItem key={center.id} value={center.id}>
-                      {center.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {currentUser?.role !== 'customer' && (
+              <div>
+                <Label className="block text-sm font-medium text-card-foreground mb-2">مركز الخدمة</Label>
+                <Select value={centerFilter} onValueChange={setCenterFilter}>
+                  <SelectTrigger data-testid="select-filter-center">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">جميع المراكز</SelectItem>
+                    {centers?.map((center: any) => (
+                      <SelectItem key={center.id} value={center.id}>
+                        {center.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div>
               <Label className="block text-sm font-medium text-card-foreground mb-2">التاريخ</Label>
               <Input 
