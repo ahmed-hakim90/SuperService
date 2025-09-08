@@ -1,8 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiGet } from "../lib/db";
+import { useAuth } from "../lib/auth";
 
 export default function Dashboard() {
+  const { user: currentUser } = useAuth();
+  
   const { data: stats } = useQuery({
     queryKey: ['/api/dashboard/stats'],
     queryFn: () => apiGet('/api/dashboard/stats'),
@@ -22,69 +25,137 @@ export default function Dashboard() {
     <div>
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-foreground mb-2">لوحة التحكم</h1>
-        <p className="text-muted-foreground">نظرة عامة على أداء النظام</p>
+        <p className="text-muted-foreground">
+          {currentUser?.role === 'technician' ? 'نظرة عامة على مهامك وإنجازاتك' : 'نظرة عامة على أداء النظام'}
+        </p>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <Card className="hover-scale" data-testid="card-total-users">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">إجمالي المستخدمين</p>
-                <p className="text-2xl font-bold text-card-foreground">{stats?.totalUsers || 0}</p>
-                <p className="text-xs text-chart-2 mt-1">+12% من الشهر الماضي</p>
-              </div>
-              <div className="w-12 h-12 bg-chart-1/10 rounded-lg flex items-center justify-center">
-                <i className="bi bi-people text-xl text-chart-1"></i>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="hover-scale" data-testid="card-service-requests">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">طلبات الصيانة</p>
-                <p className="text-2xl font-bold text-card-foreground">{stats?.serviceRequests || 0}</p>
-                <p className="text-xs text-chart-3 mt-1">+5% من الشهر الماضي</p>
-              </div>
-              <div className="w-12 h-12 bg-chart-2/10 rounded-lg flex items-center justify-center">
-                <i className="bi bi-tools text-xl text-chart-2"></i>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="hover-scale" data-testid="card-service-centers">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">مراكز الخدمة</p>
-                <p className="text-2xl font-bold text-card-foreground">{stats?.serviceCenters || 0}</p>
-                <p className="text-xs text-chart-4 mt-1">+2 مراكز جديدة</p>
-              </div>
-              <div className="w-12 h-12 bg-chart-3/10 rounded-lg flex items-center justify-center">
-                <i className="bi bi-building text-xl text-chart-3"></i>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="hover-scale" data-testid="card-revenue">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">الإيرادات</p>
-                <p className="text-2xl font-bold text-card-foreground">{stats?.revenue || 0} ج.م</p>
-                <p className="text-xs text-chart-5 mt-1">+18% من الشهر الماضي</p>
-              </div>
-              <div className="w-12 h-12 bg-chart-4/10 rounded-lg flex items-center justify-center">
-                <i className="bi bi-currency-dollar text-xl text-chart-4"></i>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {currentUser?.role === 'technician' ? (
+          <>
+            <Card className="hover-scale" data-testid="card-total-requests">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">إجمالي طلباتي</p>
+                    <p className="text-2xl font-bold text-card-foreground">{stats?.totalRequests || 0}</p>
+                    <p className="text-xs text-chart-2 mt-1">كل الطلبات المسندة إليك</p>
+                  </div>
+                  <div className="w-12 h-12 bg-chart-1/10 rounded-lg flex items-center justify-center">
+                    <i className="bi bi-clipboard-check text-xl text-chart-1"></i>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="hover-scale" data-testid="card-pending-requests">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">في الانتظار</p>
+                    <p className="text-2xl font-bold text-card-foreground">{stats?.pendingRequests || 0}</p>
+                    <p className="text-xs text-orange-500 mt-1">بحاجة للبدء</p>
+                  </div>
+                  <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                    <i className="bi bi-clock-history text-xl text-orange-500"></i>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="hover-scale" data-testid="card-in-progress-requests">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">قيد التنفيذ</p>
+                    <p className="text-2xl font-bold text-card-foreground">{stats?.inProgressRequests || 0}</p>
+                    <p className="text-xs text-blue-500 mt-1">العمل جارٍ عليها</p>
+                  </div>
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <i className="bi bi-gear-fill text-xl text-blue-500"></i>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="hover-scale" data-testid="card-completed-requests">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">مكتملة</p>
+                    <p className="text-2xl font-bold text-card-foreground">{stats?.completedRequests || 0}</p>
+                    <p className="text-xs text-green-500 mt-1">تم إنجازها بنجاح</p>
+                  </div>
+                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                    <i className="bi bi-check-circle-fill text-xl text-green-500"></i>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </>
+        ) : (
+          <>
+            <Card className="hover-scale" data-testid="card-total-users">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">إجمالي المستخدمين</p>
+                    <p className="text-2xl font-bold text-card-foreground">{stats?.totalUsers || 0}</p>
+                    <p className="text-xs text-chart-2 mt-1">+12% من الشهر الماضي</p>
+                  </div>
+                  <div className="w-12 h-12 bg-chart-1/10 rounded-lg flex items-center justify-center">
+                    <i className="bi bi-people text-xl text-chart-1"></i>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="hover-scale" data-testid="card-service-requests">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">طلبات الصيانة</p>
+                    <p className="text-2xl font-bold text-card-foreground">{stats?.serviceRequests || 0}</p>
+                    <p className="text-xs text-chart-3 mt-1">+5% من الشهر الماضي</p>
+                  </div>
+                  <div className="w-12 h-12 bg-chart-2/10 rounded-lg flex items-center justify-center">
+                    <i className="bi bi-tools text-xl text-chart-2"></i>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="hover-scale" data-testid="card-service-centers">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">مراكز الخدمة</p>
+                    <p className="text-2xl font-bold text-card-foreground">{stats?.serviceCenters || 0}</p>
+                    <p className="text-xs text-chart-4 mt-1">+2 مراكز جديدة</p>
+                  </div>
+                  <div className="w-12 h-12 bg-chart-3/10 rounded-lg flex items-center justify-center">
+                    <i className="bi bi-building text-xl text-chart-3"></i>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="hover-scale" data-testid="card-revenue">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">الإيرادات</p>
+                    <p className="text-2xl font-bold text-card-foreground">{stats?.revenue || 0} ج.م</p>
+                    <p className="text-xs text-chart-5 mt-1">+18% من الشهر الماضي</p>
+                  </div>
+                  <div className="w-12 h-12 bg-chart-4/10 rounded-lg flex items-center justify-center">
+                    <i className="bi bi-currency-dollar text-xl text-chart-4"></i>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </>
+        )}
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">

@@ -1167,8 +1167,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const stats = await storage.getDashboardStats();
       
-      // Filter stats for managers to show only their center data
-      if (currentUser.role === 'manager') {
+      // Filter stats based on user role
+      if (currentUser.role === 'technician') {
+        // For technicians, show only their assigned requests stats
+        const allRequests = await storage.getAllServiceRequests();
+        const technicianRequests = allRequests.filter(req => req.technicianId === currentUser.id);
+        
+        const filteredStats = {
+          totalRequests: technicianRequests.length,
+          pendingRequests: technicianRequests.filter(req => req.status === 'pending').length,
+          inProgressRequests: technicianRequests.filter(req => req.status === 'in_progress').length,
+          completedRequests: technicianRequests.filter(req => req.status === 'completed').length,
+          totalRevenue: technicianRequests
+            .filter(req => req.status === 'completed')
+            .reduce((sum, req) => sum + (req.actualCost || req.estimatedCost || 0), 0)
+        };
+        
+        res.json(filteredStats);
+      } else if (currentUser.role === 'manager') {
         const allRequests = await storage.getAllServiceRequests();
         const allUsers = await storage.getAllUsers();
         const allCustomers = await storage.getAllCustomers();
