@@ -144,17 +144,21 @@ export const activityLogs = pgTable("activity_logs", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Insert schemas
+// Insert schemas - Modified for MemStorage compatibility
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  centerId: z.string().nullable().optional(),
 });
 
 export const insertServiceCenterSchema = createInsertSchema(serviceCenters).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  managerId: z.string().nullable().optional(),
 });
 
 export const insertCustomerSchema = createInsertSchema(customers).omit({
@@ -171,6 +175,8 @@ export const insertCategorySchema = createInsertSchema(categories).omit({
 export const insertProductSchema = createInsertSchema(products).omit({
   id: true,
   createdAt: true,
+}).extend({
+  categoryId: z.string(),
 });
 
 export const insertServiceRequestSchema = createInsertSchema(serviceRequests).omit({
@@ -178,32 +184,54 @@ export const insertServiceRequestSchema = createInsertSchema(serviceRequests).om
   createdAt: true,
   updatedAt: true,
   completedAt: true,
+}).extend({
+  customerId: z.string(),
+  productId: z.string(),
+  centerId: z.string(),
+  technicianId: z.string().nullable().optional(),
 });
 
 export const insertWarehouseSchema = createInsertSchema(warehouses).omit({
   id: true,
   createdAt: true,
+}).extend({
+  managerId: z.string().nullable().optional(),
+  centerId: z.string().nullable().optional(),
 });
 
 export const insertSparePartSchema = createInsertSchema(spareParts).omit({
   id: true,
   createdAt: true,
+}).extend({
+  categoryId: z.string().nullable().optional(),
 });
 
 export const insertInventorySchema = createInsertSchema(inventory).omit({
   id: true,
   updatedAt: true,
+}).extend({
+  warehouseId: z.string(),
+  sparePartId: z.string(),
 });
 
 export const insertPartsTransferSchema = createInsertSchema(partsTransfers).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  fromWarehouseId: z.string(),
+  toWarehouseId: z.string(),
+  sparePartId: z.string(),
+  requestedBy: z.string(),
+  approvedBy: z.string().nullable().optional(),
 });
 
 export const insertActivityLogSchema = createInsertSchema(activityLogs).omit({
   id: true,
   createdAt: true,
+}).extend({
+  userId: z.string(),
+  entityId: z.string().nullable().optional(),
 });
 
 // Types
