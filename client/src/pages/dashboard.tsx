@@ -161,7 +161,9 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <Card data-testid="card-recent-requests">
           <CardHeader>
-            <CardTitle>أحدث طلبات الصيانة</CardTitle>
+            <CardTitle>
+              {currentUser?.role === 'technician' ? 'طلبات الصيانة المسندة إليك' : 'أحدث طلبات الصيانة'}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -173,7 +175,9 @@ export default function Dashboard() {
                     </div>
                     <div>
                       <p className="font-medium text-card-foreground">{request.deviceName}</p>
-                      <p className="text-sm text-muted-foreground">{request.customerName}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {request.requestNumber} - {request.customerName || 'عميل'}
+                      </p>
                     </div>
                   </div>
                   <span className={`status-badge status-${request.status}`}>
@@ -183,7 +187,9 @@ export default function Dashboard() {
                   </span>
                 </div>
               )) : (
-                <p className="text-center text-muted-foreground py-8">لا توجد طلبات حديثة</p>
+                <p className="text-center text-muted-foreground py-8">
+                  {currentUser?.role === 'technician' ? 'لا توجد طلبات مسندة إليك' : 'لا توجد طلبات حديثة'}
+                </p>
               )}
             </div>
           </CardContent>
