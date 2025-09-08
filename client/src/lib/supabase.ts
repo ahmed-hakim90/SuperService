@@ -1,7 +1,7 @@
-// Client-side should not connect to database directly
-// All database operations should go through API endpoints
-// This file is kept for potential future client-side database needs
+// src/lib/supabaseClient.ts
+import { createClient } from '@supabase/supabase-js';
 
-export const db = {
-  // Placeholder - client uses API endpoints instead
-};
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
