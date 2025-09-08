@@ -32,23 +32,75 @@ function Router() {
       <Route path="/signup" component={SignupPage} />
       <Route path="/waiting" component={WaitingPage} />
       
-      <Route path="/dashboard" nest>
+      <Route path="/dashboard">
         <DashboardLayout>
-          <Switch>
-            <Route path="/" component={Dashboard} />
-            <Route path="users" component={Users} />
-            <Route path="service-requests" component={ServiceRequests} />
-            <Route path="centers" component={Centers} />
-            <Route path="warehouses" component={Warehouses} />
-            <Route path="customers" component={Customers} />
-            <Route path="categories" component={Categories} />
-            <Route path="transfers" component={Transfers} />
-            <Route path="reports" component={Reports} />
-            <Route path="activities" component={Activities} />
-            <Route path="roles" component={Roles} />
-            <Route path="settings" component={Settings} />
-            <Route component={NotFound} />
-          </Switch>
+          <Dashboard />
+        </DashboardLayout>
+      </Route>
+      
+      <Route path="/dashboard/users">
+        <DashboardLayout>
+          <Users />
+        </DashboardLayout>
+      </Route>
+      
+      <Route path="/dashboard/service-requests">
+        <DashboardLayout>
+          <ServiceRequests />
+        </DashboardLayout>
+      </Route>
+      
+      <Route path="/dashboard/centers">
+        <DashboardLayout>
+          <Centers />
+        </DashboardLayout>
+      </Route>
+      
+      <Route path="/dashboard/warehouses">
+        <DashboardLayout>
+          <Warehouses />
+        </DashboardLayout>
+      </Route>
+      
+      <Route path="/dashboard/customers">
+        <DashboardLayout>
+          <Customers />
+        </DashboardLayout>
+      </Route>
+      
+      <Route path="/dashboard/categories">
+        <DashboardLayout>
+          <Categories />
+        </DashboardLayout>
+      </Route>
+      
+      <Route path="/dashboard/transfers">
+        <DashboardLayout>
+          <Transfers />
+        </DashboardLayout>
+      </Route>
+      
+      <Route path="/dashboard/reports">
+        <DashboardLayout>
+          <Reports />
+        </DashboardLayout>
+      </Route>
+      
+      <Route path="/dashboard/activities">
+        <DashboardLayout>
+          <Activities />
+        </DashboardLayout>
+      </Route>
+      
+      <Route path="/dashboard/roles">
+        <DashboardLayout>
+          <Roles />
+        </DashboardLayout>
+      </Route>
+      
+      <Route path="/dashboard/settings">
+        <DashboardLayout>
+          <Settings />
         </DashboardLayout>
       </Route>
       

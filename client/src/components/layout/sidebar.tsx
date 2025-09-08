@@ -1,4 +1,4 @@
-import { useLocation, Link } from "wouter";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 
 interface SidebarProps {
@@ -22,24 +22,28 @@ const menuItems = [
 ];
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
+
+  const handleNavigation = (path: string) => {
+    setLocation(path);
+    onClose();
+  };
 
   return (
     <div className={`sidebar fixed right-0 top-16 h-[calc(100vh-4rem)] w-64 bg-card border-l border-border overflow-y-auto transition-transform duration-300 ease-in-out lg:translate-x-0 z-30 ${isOpen ? 'open' : ''}`}>
       <div className="p-4">
         <nav className="space-y-2">
           {menuItems.map((item) => (
-            <Link key={item.id} href={item.path}>
-              <Button
-                variant="ghost"
-                className={`sidebar-link w-full justify-start text-right ${location === item.path ? 'active' : ''}`}
-                onClick={onClose}
-                data-testid={`nav-${item.id}`}
-              >
-                <i className={`bi ${item.icon} w-5 h-5 ml-3`}></i>
-                <span>{item.label}</span>
-              </Button>
-            </Link>
+            <Button
+              key={item.id}
+              variant="ghost"
+              className={`sidebar-link w-full justify-start text-right ${location === item.path ? 'active' : ''}`}
+              onClick={() => handleNavigation(item.path)}
+              data-testid={`nav-${item.id}`}
+            >
+              <i className={`bi ${item.icon} w-5 h-5 ml-3`}></i>
+              <span>{item.label}</span>
+            </Button>
           ))}
         </nav>
       </div>
