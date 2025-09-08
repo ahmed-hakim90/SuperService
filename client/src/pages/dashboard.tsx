@@ -26,7 +26,8 @@ export default function Dashboard() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-foreground mb-2">لوحة التحكم</h1>
         <p className="text-muted-foreground">
-          {currentUser?.role === 'technician' ? 'نظرة عامة على مهامك وإنجازاتك' : 'نظرة عامة على أداء النظام'}
+          {currentUser?.role === 'technician' ? 'نظرة عامة على مهامك وإنجازاتك' : 
+           currentUser?.role === 'manager' ? 'نظرة عامة على أداء مركزك' : 'نظرة عامة على أداء النظام'}
         </p>
       </div>
       
@@ -88,6 +89,68 @@ export default function Dashboard() {
                   </div>
                   <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                     <i className="bi bi-check-circle-fill text-xl text-green-500"></i>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </>
+        ) : currentUser?.role === 'manager' ? (
+          <>
+            <Card className="hover-scale" data-testid="card-center-users">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">مستخدمي المركز</p>
+                    <p className="text-2xl font-bold text-card-foreground">{stats?.totalUsers || 0}</p>
+                    <p className="text-xs text-chart-2 mt-1">الموظفين في مركزك</p>
+                  </div>
+                  <div className="w-12 h-12 bg-chart-1/10 rounded-lg flex items-center justify-center">
+                    <i className="bi bi-people text-xl text-chart-1"></i>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="hover-scale" data-testid="card-center-requests">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">طلبات المركز</p>
+                    <p className="text-2xl font-bold text-card-foreground">{stats?.serviceRequests || 0}</p>
+                    <p className="text-xs text-chart-3 mt-1">كل طلبات الصيانة</p>
+                  </div>
+                  <div className="w-12 h-12 bg-chart-2/10 rounded-lg flex items-center justify-center">
+                    <i className="bi bi-tools text-xl text-chart-2"></i>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="hover-scale" data-testid="card-center-only">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">مركز الخدمة</p>
+                    <p className="text-2xl font-bold text-card-foreground">{stats?.serviceCenters || 1}</p>
+                    <p className="text-xs text-chart-4 mt-1">مركزك فقط</p>
+                  </div>
+                  <div className="w-12 h-12 bg-chart-3/10 rounded-lg flex items-center justify-center">
+                    <i className="bi bi-building text-xl text-chart-3"></i>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="hover-scale" data-testid="card-center-revenue">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">إيرادات المركز</p>
+                    <p className="text-2xl font-bold text-card-foreground">{stats?.revenue || 0} ج.م</p>
+                    <p className="text-xs text-chart-5 mt-1">من طلبات مركزك</p>
+                  </div>
+                  <div className="w-12 h-12 bg-chart-4/10 rounded-lg flex items-center justify-center">
+                    <i className="bi bi-currency-dollar text-xl text-chart-4"></i>
                   </div>
                 </div>
               </CardContent>
@@ -162,7 +225,8 @@ export default function Dashboard() {
         <Card data-testid="card-recent-requests">
           <CardHeader>
             <CardTitle>
-              {currentUser?.role === 'technician' ? 'طلبات الصيانة المسندة إليك' : 'أحدث طلبات الصيانة'}
+              {currentUser?.role === 'technician' ? 'طلبات الصيانة المسندة إليك' : 
+               currentUser?.role === 'manager' ? 'أحدث طلبات الصيانة في مركزك' : 'أحدث طلبات الصيانة'}
             </CardTitle>
           </CardHeader>
           <CardContent>
