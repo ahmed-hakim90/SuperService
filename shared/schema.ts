@@ -243,6 +243,14 @@ export const insertActivityLogSchema = createInsertSchema(activityLogs).omit({
   entityId: z.string().nullable().optional(),
 });
 
+export const insertServiceRequestFollowUpSchema = createInsertSchema(serviceRequestFollowUps).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  serviceRequestId: z.string(),
+  technicianId: z.string(),
+});
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -276,3 +284,6 @@ export type PartsTransfer = typeof partsTransfers.$inferSelect;
 
 export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
 export type ActivityLog = typeof activityLogs.$inferSelect;
+
+export type InsertServiceRequestFollowUp = z.infer<typeof insertServiceRequestFollowUpSchema>;
+export type ServiceRequestFollowUp = typeof serviceRequestFollowUps.$inferSelect;

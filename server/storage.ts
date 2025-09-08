@@ -5,6 +5,7 @@ import type {
   Category, InsertCategory,
   Product, InsertProduct,
   ServiceRequest, InsertServiceRequest,
+  ServiceRequestFollowUp, InsertServiceRequestFollowUp,
   Warehouse, InsertWarehouse,
   SparePart, InsertSparePart,
   Inventory, InsertInventory,
@@ -56,6 +57,10 @@ export interface IStorage {
   updateServiceRequest(id: string, request: Partial<InsertServiceRequest>): Promise<ServiceRequest>;
   deleteServiceRequest(id: string): Promise<void>;
 
+  // Service Request Follow-ups
+  getServiceRequestFollowUps(serviceRequestId: string): Promise<ServiceRequestFollowUp[]>;
+  createServiceRequestFollowUp(followUp: InsertServiceRequestFollowUp): Promise<ServiceRequestFollowUp>;
+
   // Warehouses
   getAllWarehouses(): Promise<Warehouse[]>;
   getWarehouse(id: string): Promise<Warehouse | undefined>;
@@ -83,6 +88,7 @@ export class MemStorage implements IStorage {
   private categories: Map<string, Category> = new Map();
   private products: Map<string, Product> = new Map();
   private serviceRequests: Map<string, ServiceRequest> = new Map();
+  private serviceRequestFollowUps: Map<string, ServiceRequestFollowUp> = new Map();
   private warehouses: Map<string, Warehouse> = new Map();
   private activityLogs: Map<string, ActivityLog> = new Map();
 
@@ -564,6 +570,23 @@ export class MemStorage implements IStorage {
 
   async deleteServiceRequest(id: string): Promise<void> {
     this.serviceRequests.delete(id);
+  }
+
+  // Service Request Follow-ups
+  async getServiceRequestFollowUps(serviceRequestId: string): Promise<ServiceRequestFollowUp[]> {
+    return Array.from(this.serviceRequestFollowUps.values())
+      .filter(followUp => followUp.serviceRequestId === serviceRequestId)
+      .sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime());
+  }
+
+  async createServiceRequestFollowUp(followUpData: InsertServiceRequestFollowUp): Promise<ServiceRequestFollowUp> {
+    const followUp: ServiceRequestFollowUp = {
+      id: generateId(),
+      ...followUpData,
+      createdAt: new Date()
+    };
+    this.serviceRequestFollowUps.set(followUp.id, followUp);
+    return followUp;
   }
 
   // Warehouses CRUD
