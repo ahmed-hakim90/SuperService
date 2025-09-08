@@ -1,10 +1,21 @@
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
+import { useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiGet } from "../lib/db";
 import { useAuth } from "../lib/auth";
+import { canAccessPage } from "../lib/permissions";
 
 export default function Dashboard() {
   const { user: currentUser } = useAuth();
+  const [, setLocation] = useLocation();
+
+  // Redirect customers away from dashboard
+  useEffect(() => {
+    if (currentUser && !canAccessPage(currentUser.role, 'dashboard')) {
+      setLocation('/dashboard/service-requests');
+    }
+  }, [currentUser, setLocation]);
   
   const { data: stats } = useQuery({
     queryKey: ['/api/dashboard/stats'],

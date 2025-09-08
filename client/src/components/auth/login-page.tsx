@@ -26,7 +26,14 @@ export default function LoginPage() {
           title: "تم تسجيل الدخول بنجاح",
           description: "مرحباً بك في نظام إدارة مراكز الصيانة",
         });
-        setLocation("/dashboard");
+        
+        // Get user role to determine redirect
+        const userData = JSON.parse(localStorage.getItem('user') || '{}');
+        if (userData.role === 'customer') {
+          setLocation("/dashboard/service-requests");
+        } else {
+          setLocation("/dashboard");
+        }
       } else {
         toast({
           variant: "destructive",
