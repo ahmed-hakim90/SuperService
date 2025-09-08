@@ -182,12 +182,12 @@ export default function Users() {
               {(formData.role === 'manager' || formData.role === 'technician' || formData.role === 'receptionist') && (
                 <div>
                   <Label>مركز الخدمة</Label>
-                  <Select value={formData.centerId || ""} onValueChange={(value) => setFormData({ ...formData, centerId: value || null })}>
+                  <Select value={formData.centerId || "none"} onValueChange={(value) => setFormData({ ...formData, centerId: value === "none" ? null : value })}>
                     <SelectTrigger data-testid="select-user-center">
                       <SelectValue placeholder="اختر مركز الخدمة" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">بدون مركز</SelectItem>
+                      <SelectItem value="none">بدون مركز</SelectItem>
                       {serviceCenters?.map((center: any) => (
                         <SelectItem key={center.id} value={center.id}>{center.name}</SelectItem>
                       ))}
