@@ -25,6 +25,7 @@ export const rolePermissions: Record<UserRole, Record<string, Permission>> = {
     transfers: { read: true, create: true, update: true, delete: true },
     reports: { read: true, create: true, update: true, delete: true },
     activities: { read: true, create: true, update: true, delete: true },
+    dataManagement: { read: true, create: true, update: true, delete: true },
     settings: { read: true, create: true, update: true, delete: true },
   },
   
@@ -80,7 +81,7 @@ export const rolePageAccess: Record<UserRole, string[]> = {
   admin: [
     "dashboard", "users", "roles", "centers", "warehouses", "inventory",
     "customers", "categories", "service-requests", "transfers", 
-    "reports", "activities", "settings"
+    "reports", "activities", "data-management", "settings"
   ],
   manager: [
     "dashboard", "users", "centers", "warehouses", "inventory", "customers", 

@@ -21,6 +21,7 @@ const menuItems = [
   { id: "transfers", path: "/dashboard/transfers", icon: "bi-arrow-left-right", label: "تحويل قطع الغيار" },
   { id: "reports", path: "/dashboard/reports", icon: "bi-graph-up", label: "التقارير" },
   { id: "activities", path: "/dashboard/activities", icon: "bi-activity", label: "سجل الأنشطة" },
+  { id: "data-management", path: "/dashboard/data-management", icon: "bi-database", label: "إدارة البيانات" },
   { id: "settings", path: "/dashboard/settings", icon: "bi-gear", label: "الإعدادات" },
 ];
 

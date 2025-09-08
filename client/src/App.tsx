@@ -22,6 +22,7 @@ import Reports from "./pages/reports";
 import Activities from "./pages/activities";
 import Roles from "./pages/roles";
 import Settings from "./pages/settings";
+import DataManagement from "./pages/data-management";
 import NotFound from "@/pages/not-found";
 
 
@@ -108,6 +109,12 @@ function Router() {
       <Route path="/dashboard/settings">
         <DashboardLayout>
           <Settings />
+        </DashboardLayout>
+      </Route>
+      
+      <Route path="/dashboard/data-management">
+        <DashboardLayout>
+          <DataManagement />
         </DashboardLayout>
       </Route>
       
