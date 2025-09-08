@@ -1,7 +1,3 @@
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
-import { eq, desc, and, like, sql } from "drizzle-orm";
-import * as schema from "@shared/schema";
 import type { 
   User, InsertUser, 
   ServiceCenter, InsertServiceCenter,
@@ -15,13 +11,6 @@ import type {
   PartsTransfer, InsertPartsTransfer,
   ActivityLog, InsertActivityLog
 } from "@shared/schema";
-
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL is required");
-}
-
-const client = postgres(process.env.DATABASE_URL);
-export const db = drizzle(client, { schema });
 
 export interface IStorage {
   // Users
@@ -76,214 +65,516 @@ export interface IStorage {
   logActivity(activity: InsertActivityLog): Promise<ActivityLog>;
 }
 
-export class PostgresStorage implements IStorage {
+function generateId(): string {
+  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+}
+
+export class MemStorage implements IStorage {
+  private users: Map<string, User> = new Map();
+  private serviceCenters: Map<string, ServiceCenter> = new Map();
+  private customers: Map<string, Customer> = new Map();
+  private categories: Map<string, Category> = new Map();
+  private products: Map<string, Product> = new Map();
+  private serviceRequests: Map<string, ServiceRequest> = new Map();
+  private activityLogs: Map<string, ActivityLog> = new Map();
+
+  constructor() {
+    this.seedData();
+  }
+
+  private seedData() {
+    // Sample Users
+    const sampleUsers: User[] = [
+      {
+        id: "user-1",
+        email: "admin@sokany.com",
+        password: "hashed_password",
+        fullName: "أحمد محمد",
+        phone: "+966501234567",
+        address: "الرياض، المملكة العربية السعودية",
+        role: "admin",
+        status: "active",
+        centerId: null,
+        createdAt: new Date("2024-01-15"),
+        updatedAt: new Date("2024-01-15")
+      },
+      {
+        id: "user-2",
+        email: "manager@sokany.com",
+        password: "hashed_password",
+        fullName: "سارة أحمد",
+        phone: "+966502345678",
+        address: "جدة، المملكة العربية السعودية",
+        role: "manager",
+        status: "active",
+        centerId: "center-1",
+        createdAt: new Date("2024-02-01"),
+        updatedAt: new Date("2024-02-01")
+      },
+      {
+        id: "user-3",
+        email: "tech@sokany.com",
+        password: "hashed_password",
+        fullName: "محمد علي",
+        phone: "+966503456789",
+        address: "الدمام، المملكة العربية السعودية",
+        role: "technician",
+        status: "active",
+        centerId: "center-1",
+        createdAt: new Date("2024-02-15"),
+        updatedAt: new Date("2024-02-15")
+      }
+    ];
+
+    // Sample Service Centers
+    const sampleCenters: ServiceCenter[] = [
+      {
+        id: "center-1",
+        name: "مركز الرياض الرئيسي",
+        address: "شارع الملك فهد، الرياض 12345",
+        phone: "+966114567890",
+        email: "riyadh@sokany.com",
+        managerId: "user-2",
+        isActive: true,
+        createdAt: new Date("2024-01-01"),
+        updatedAt: new Date("2024-01-01")
+      },
+      {
+        id: "center-2",
+        name: "مركز جدة",
+        address: "طريق الملك عبدالعزيز، جدة 21441",
+        phone: "+966122345678",
+        email: "jeddah@sokany.com",
+        managerId: null,
+        isActive: true,
+        createdAt: new Date("2024-01-10"),
+        updatedAt: new Date("2024-01-10")
+      }
+    ];
+
+    // Sample Customers
+    const sampleCustomers: Customer[] = [
+      {
+        id: "customer-1",
+        fullName: "خالد السعيد",
+        phone: "+966501111111",
+        email: "khalid@gmail.com",
+        address: "حي الملز، الرياض",
+        createdAt: new Date("2024-03-01"),
+        updatedAt: new Date("2024-03-01")
+      },
+      {
+        id: "customer-2",
+        fullName: "فاطمة الزهراء",
+        phone: "+966502222222",
+        email: "fatima@hotmail.com",
+        address: "حي الروضة، جدة",
+        createdAt: new Date("2024-03-05"),
+        updatedAt: new Date("2024-03-05")
+      }
+    ];
+
+    // Sample Categories
+    const sampleCategories: Category[] = [
+      {
+        id: "cat-1",
+        name: "أجهزة المنزل",
+        description: "الأجهزة المنزلية الكهربائية",
+        createdAt: new Date("2024-01-01")
+      },
+      {
+        id: "cat-2",
+        name: "أجهزة المطبخ",
+        description: "أجهزة المطبخ الكهربائية",
+        createdAt: new Date("2024-01-01")
+      }
+    ];
+
+    // Sample Products
+    const sampleProducts: Product[] = [
+      {
+        id: "prod-1",
+        name: "غسالة أتوماتيك",
+        model: "SW-8000",
+        categoryId: "cat-1",
+        description: "غسالة أتوماتيك 8 كيلو",
+        createdAt: new Date("2024-01-01")
+      },
+      {
+        id: "prod-2",
+        name: "ثلاجة مزدوجة",
+        model: "RF-500",
+        categoryId: "cat-1",
+        description: "ثلاجة مزدوجة الأبواب",
+        createdAt: new Date("2024-01-01")
+      }
+    ];
+
+    // Sample Service Requests
+    const sampleRequests: ServiceRequest[] = [
+      {
+        id: "req-1",
+        requestNumber: "SR-2024-001",
+        customerId: "customer-1",
+        productId: "prod-1",
+        deviceName: "غسالة أتوماتيك",
+        model: "SW-8000",
+        issue: "لا تعمل الغسالة عند الضغط على زر التشغيل",
+        status: "pending",
+        centerId: "center-1",
+        technicianId: null,
+        estimatedCost: 250,
+        actualCost: null,
+        notes: null,
+        createdAt: new Date("2024-09-01"),
+        updatedAt: new Date("2024-09-01"),
+        completedAt: null
+      },
+      {
+        id: "req-2",
+        requestNumber: "SR-2024-002",
+        customerId: "customer-2",
+        productId: "prod-2",
+        deviceName: "ثلاجة مزدوجة",
+        model: "RF-500",
+        issue: "الثلاجة لا تبرد بشكل جيد",
+        status: "in_progress",
+        centerId: "center-1",
+        technicianId: "user-3",
+        estimatedCost: 400,
+        actualCost: null,
+        notes: "تم الكشف على الجهاز وتحديد المشكلة",
+        createdAt: new Date("2024-08-28"),
+        updatedAt: new Date("2024-09-02"),
+        completedAt: null
+      }
+    ];
+
+    // Sample Activity Logs
+    const sampleActivities: ActivityLog[] = [
+      {
+        id: "activity-1",
+        userId: "user-1",
+        action: "create",
+        entityType: "service_request",
+        entityId: "req-1",
+        description: "تم إنشاء طلب صيانة جديد للعميل خالد السعيد",
+        createdAt: new Date("2024-09-01")
+      },
+      {
+        id: "activity-2",
+        userId: "user-2",
+        action: "update",
+        entityType: "service_request",
+        entityId: "req-2",
+        description: "تم تحديث حالة طلب الصيانة إلى قيد التقدم",
+        createdAt: new Date("2024-09-02")
+      }
+    ];
+
+    // Populate maps
+    sampleUsers.forEach(user => this.users.set(user.id, user));
+    sampleCenters.forEach(center => this.serviceCenters.set(center.id, center));
+    sampleCustomers.forEach(customer => this.customers.set(customer.id, customer));
+    sampleCategories.forEach(category => this.categories.set(category.id, category));
+    sampleProducts.forEach(product => this.products.set(product.id, product));
+    sampleRequests.forEach(request => this.serviceRequests.set(request.id, request));
+    sampleActivities.forEach(activity => this.activityLogs.set(activity.id, activity));
+  }
+
   // Users
   async getUser(id: string): Promise<User | undefined> {
-    const result = await db.select().from(schema.users).where(eq(schema.users.id, id)).limit(1);
-    return result[0];
+    return this.users.get(id);
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    const result = await db.select().from(schema.users).where(eq(schema.users.email, email)).limit(1);
-    return result[0];
+    return Array.from(this.users.values()).find(user => user.email === email);
   }
 
   async getAllUsers(): Promise<User[]> {
-    return await db.select().from(schema.users).orderBy(desc(schema.users.createdAt));
+    return Array.from(this.users.values()).sort((a, b) => 
+      new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime()
+    );
   }
 
-  async createUser(user: InsertUser): Promise<User> {
-    const result = await db.insert(schema.users).values(user).returning();
-    return result[0];
+  async createUser(userData: InsertUser): Promise<User> {
+    const user: User = {
+      id: generateId(),
+      ...userData,
+      phone: userData.phone ?? null,
+      address: userData.address ?? null,
+      centerId: userData.centerId ?? null,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.users.set(user.id, user);
+    return user;
   }
 
-  async updateUser(id: string, user: Partial<InsertUser>): Promise<User> {
-    const result = await db.update(schema.users)
-      .set({ ...user, updatedAt: new Date() })
-      .where(eq(schema.users.id, id))
-      .returning();
-    return result[0];
+  async updateUser(id: string, userData: Partial<InsertUser>): Promise<User> {
+    const existingUser = this.users.get(id);
+    if (!existingUser) throw new Error('User not found');
+    
+    const updatedUser: User = {
+      ...existingUser,
+      ...userData,
+      updatedAt: new Date()
+    };
+    this.users.set(id, updatedUser);
+    return updatedUser;
   }
 
   async deleteUser(id: string): Promise<void> {
-    await db.delete(schema.users).where(eq(schema.users.id, id));
+    this.users.delete(id);
   }
 
   // Service Centers
   async getAllServiceCenters(): Promise<ServiceCenter[]> {
-    return await db.select().from(schema.serviceCenters).orderBy(desc(schema.serviceCenters.createdAt));
+    return Array.from(this.serviceCenters.values()).sort((a, b) => 
+      new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime()
+    );
   }
 
   async getServiceCenter(id: string): Promise<ServiceCenter | undefined> {
-    const result = await db.select().from(schema.serviceCenters).where(eq(schema.serviceCenters.id, id)).limit(1);
-    return result[0];
+    return this.serviceCenters.get(id);
   }
 
-  async createServiceCenter(center: InsertServiceCenter): Promise<ServiceCenter> {
-    const result = await db.insert(schema.serviceCenters).values(center).returning();
-    return result[0];
+  async createServiceCenter(centerData: InsertServiceCenter): Promise<ServiceCenter> {
+    const center: ServiceCenter = {
+      id: generateId(),
+      ...centerData,
+      phone: centerData.phone ?? null,
+      email: centerData.email ?? null,
+      managerId: centerData.managerId ?? null,
+      isActive: centerData.isActive ?? null,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.serviceCenters.set(center.id, center);
+    return center;
   }
 
-  async updateServiceCenter(id: string, center: Partial<InsertServiceCenter>): Promise<ServiceCenter> {
-    const result = await db.update(schema.serviceCenters)
-      .set({ ...center, updatedAt: new Date() })
-      .where(eq(schema.serviceCenters.id, id))
-      .returning();
-    return result[0];
+  async updateServiceCenter(id: string, centerData: Partial<InsertServiceCenter>): Promise<ServiceCenter> {
+    const existingCenter = this.serviceCenters.get(id);
+    if (!existingCenter) throw new Error('Service center not found');
+    
+    const updatedCenter: ServiceCenter = {
+      ...existingCenter,
+      ...centerData,
+      updatedAt: new Date()
+    };
+    this.serviceCenters.set(id, updatedCenter);
+    return updatedCenter;
   }
 
   async deleteServiceCenter(id: string): Promise<void> {
-    await db.delete(schema.serviceCenters).where(eq(schema.serviceCenters.id, id));
+    this.serviceCenters.delete(id);
   }
 
   // Customers
   async getAllCustomers(): Promise<Customer[]> {
-    return await db.select().from(schema.customers).orderBy(desc(schema.customers.createdAt));
+    return Array.from(this.customers.values()).sort((a, b) => 
+      new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime()
+    );
   }
 
   async getCustomer(id: string): Promise<Customer | undefined> {
-    const result = await db.select().from(schema.customers).where(eq(schema.customers.id, id)).limit(1);
-    return result[0];
+    return this.customers.get(id);
   }
 
-  async createCustomer(customer: InsertCustomer): Promise<Customer> {
-    const result = await db.insert(schema.customers).values(customer).returning();
-    return result[0];
+  async createCustomer(customerData: InsertCustomer): Promise<Customer> {
+    const customer: Customer = {
+      id: generateId(),
+      ...customerData,
+      email: customerData.email ?? null,
+      address: customerData.address ?? null,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.customers.set(customer.id, customer);
+    return customer;
   }
 
-  async updateCustomer(id: string, customer: Partial<InsertCustomer>): Promise<Customer> {
-    const result = await db.update(schema.customers)
-      .set({ ...customer, updatedAt: new Date() })
-      .where(eq(schema.customers.id, id))
-      .returning();
-    return result[0];
+  async updateCustomer(id: string, customerData: Partial<InsertCustomer>): Promise<Customer> {
+    const existingCustomer = this.customers.get(id);
+    if (!existingCustomer) throw new Error('Customer not found');
+    
+    const updatedCustomer: Customer = {
+      ...existingCustomer,
+      ...customerData,
+      updatedAt: new Date()
+    };
+    this.customers.set(id, updatedCustomer);
+    return updatedCustomer;
   }
 
   async deleteCustomer(id: string): Promise<void> {
-    await db.delete(schema.customers).where(eq(schema.customers.id, id));
+    this.customers.delete(id);
   }
 
   // Categories
   async getAllCategories(): Promise<Category[]> {
-    return await db.select().from(schema.categories).orderBy(desc(schema.categories.createdAt));
+    return Array.from(this.categories.values()).sort((a, b) => 
+      new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime()
+    );
   }
 
   async getCategory(id: string): Promise<Category | undefined> {
-    const result = await db.select().from(schema.categories).where(eq(schema.categories.id, id)).limit(1);
-    return result[0];
+    return this.categories.get(id);
   }
 
-  async createCategory(category: InsertCategory): Promise<Category> {
-    const result = await db.insert(schema.categories).values(category).returning();
-    return result[0];
+  async createCategory(categoryData: InsertCategory): Promise<Category> {
+    const category: Category = {
+      id: generateId(),
+      ...categoryData,
+      description: categoryData.description ?? null,
+      createdAt: new Date()
+    };
+    this.categories.set(category.id, category);
+    return category;
   }
 
-  async updateCategory(id: string, category: Partial<InsertCategory>): Promise<Category> {
-    const result = await db.update(schema.categories)
-      .set(category)
-      .where(eq(schema.categories.id, id))
-      .returning();
-    return result[0];
+  async updateCategory(id: string, categoryData: Partial<InsertCategory>): Promise<Category> {
+    const existingCategory = this.categories.get(id);
+    if (!existingCategory) throw new Error('Category not found');
+    
+    const updatedCategory: Category = {
+      ...existingCategory,
+      ...categoryData
+    };
+    this.categories.set(id, updatedCategory);
+    return updatedCategory;
   }
 
   async deleteCategory(id: string): Promise<void> {
-    await db.delete(schema.categories).where(eq(schema.categories.id, id));
+    this.categories.delete(id);
   }
 
   // Products
   async getAllProducts(): Promise<Product[]> {
-    return await db.select().from(schema.products).orderBy(desc(schema.products.createdAt));
+    return Array.from(this.products.values()).sort((a, b) => 
+      new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime()
+    );
   }
 
   async getProduct(id: string): Promise<Product | undefined> {
-    const result = await db.select().from(schema.products).where(eq(schema.products.id, id)).limit(1);
-    return result[0];
+    return this.products.get(id);
   }
 
-  async createProduct(product: InsertProduct): Promise<Product> {
-    const result = await db.insert(schema.products).values(product).returning();
-    return result[0];
+  async createProduct(productData: InsertProduct): Promise<Product> {
+    const product: Product = {
+      id: generateId(),
+      ...productData,
+      model: productData.model ?? null,
+      description: productData.description ?? null,
+      createdAt: new Date()
+    };
+    this.products.set(product.id, product);
+    return product;
   }
 
-  async updateProduct(id: string, product: Partial<InsertProduct>): Promise<Product> {
-    const result = await db.update(schema.products)
-      .set(product)
-      .where(eq(schema.products.id, id))
-      .returning();
-    return result[0];
+  async updateProduct(id: string, productData: Partial<InsertProduct>): Promise<Product> {
+    const existingProduct = this.products.get(id);
+    if (!existingProduct) throw new Error('Product not found');
+    
+    const updatedProduct: Product = {
+      ...existingProduct,
+      ...productData
+    };
+    this.products.set(id, updatedProduct);
+    return updatedProduct;
   }
 
   async deleteProduct(id: string): Promise<void> {
-    await db.delete(schema.products).where(eq(schema.products.id, id));
+    this.products.delete(id);
   }
 
   // Service Requests
   async getAllServiceRequests(): Promise<ServiceRequest[]> {
-    return await db.select().from(schema.serviceRequests).orderBy(desc(schema.serviceRequests.createdAt));
+    return Array.from(this.serviceRequests.values()).sort((a, b) => 
+      new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime()
+    );
   }
 
   async getServiceRequest(id: string): Promise<ServiceRequest | undefined> {
-    const result = await db.select().from(schema.serviceRequests).where(eq(schema.serviceRequests.id, id)).limit(1);
-    return result[0];
+    return this.serviceRequests.get(id);
   }
 
-  async createServiceRequest(request: InsertServiceRequest): Promise<ServiceRequest> {
-    const result = await db.insert(schema.serviceRequests).values(request).returning();
-    return result[0];
+  async createServiceRequest(requestData: InsertServiceRequest): Promise<ServiceRequest> {
+    const request: ServiceRequest = {
+      id: generateId(),
+      ...requestData,
+      model: requestData.model ?? null,
+      technicianId: requestData.technicianId ?? null,
+      estimatedCost: requestData.estimatedCost ?? null,
+      actualCost: requestData.actualCost ?? null,
+      notes: requestData.notes ?? null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      completedAt: null
+    };
+    this.serviceRequests.set(request.id, request);
+    return request;
   }
 
-  async updateServiceRequest(id: string, request: Partial<InsertServiceRequest>): Promise<ServiceRequest> {
-    const result = await db.update(schema.serviceRequests)
-      .set({ ...request, updatedAt: new Date() })
-      .where(eq(schema.serviceRequests.id, id))
-      .returning();
-    return result[0];
+  async updateServiceRequest(id: string, requestData: Partial<InsertServiceRequest>): Promise<ServiceRequest> {
+    const existingRequest = this.serviceRequests.get(id);
+    if (!existingRequest) throw new Error('Service request not found');
+    
+    const updatedRequest: ServiceRequest = {
+      ...existingRequest,
+      ...requestData,
+      updatedAt: new Date()
+    };
+    this.serviceRequests.set(id, updatedRequest);
+    return updatedRequest;
   }
 
   async deleteServiceRequest(id: string): Promise<void> {
-    await db.delete(schema.serviceRequests).where(eq(schema.serviceRequests.id, id));
+    this.serviceRequests.delete(id);
   }
 
   // Dashboard Stats
   async getDashboardStats(): Promise<any> {
-    const [userCount] = await db.select({ count: sql<number>`count(*)` }).from(schema.users);
-    const [requestCount] = await db.select({ count: sql<number>`count(*)` }).from(schema.serviceRequests);
-    const [centerCount] = await db.select({ count: sql<number>`count(*)` }).from(schema.serviceCenters);
-    
     return {
-      totalUsers: userCount.count,
-      serviceRequests: requestCount.count,
-      serviceCenters: centerCount.count,
-      revenue: 125490 // This would be calculated from actual revenue data
+      totalUsers: this.users.size,
+      serviceRequests: this.serviceRequests.size,
+      serviceCenters: this.serviceCenters.size,
+      revenue: 125490
     };
   }
 
   async getRecentServiceRequests(): Promise<any[]> {
-    const requests = await db.select()
-      .from(schema.serviceRequests)
-      .orderBy(desc(schema.serviceRequests.createdAt))
-      .limit(5);
+    const requests = Array.from(this.serviceRequests.values())
+      .sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime())
+      .slice(0, 5);
     
-    return requests.map(request => ({
-      ...request,
-      customerName: "عميل",
-      deviceName: request.deviceName,
-      status: request.status
-    }));
+    return requests.map(request => {
+      const customer = this.customers.get(request.customerId);
+      return {
+        ...request,
+        customerName: customer?.fullName || "عميل غير محدد"
+      };
+    });
   }
 
   async getRecentActivities(): Promise<ActivityLog[]> {
-    return await db.select()
-      .from(schema.activityLogs)
-      .orderBy(desc(schema.activityLogs.createdAt))
-      .limit(10);
+    return Array.from(this.activityLogs.values())
+      .sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime())
+      .slice(0, 10);
   }
 
   // Activity Logs
-  async logActivity(activity: InsertActivityLog): Promise<ActivityLog> {
-    const result = await db.insert(schema.activityLogs).values(activity).returning();
-    return result[0];
+  async logActivity(activityData: InsertActivityLog): Promise<ActivityLog> {
+    const activity: ActivityLog = {
+      id: generateId(),
+      ...activityData,
+      entityId: activityData.entityId ?? null,
+      createdAt: new Date()
+    };
+    this.activityLogs.set(activity.id, activity);
+    return activity;
   }
 }
 
-export const storage = new PostgresStorage();
+export const storage = new MemStorage();
