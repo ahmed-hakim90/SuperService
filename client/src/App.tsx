@@ -36,17 +36,17 @@ function Router() {
         <DashboardLayout>
           <Switch>
             <Route path="/" component={Dashboard} />
-            <Route path="/users" component={Users} />
-            <Route path="/service-requests" component={ServiceRequests} />
-            <Route path="/centers" component={Centers} />
-            <Route path="/warehouses" component={Warehouses} />
-            <Route path="/customers" component={Customers} />
-            <Route path="/categories" component={Categories} />
-            <Route path="/transfers" component={Transfers} />
-            <Route path="/reports" component={Reports} />
-            <Route path="/activities" component={Activities} />
-            <Route path="/roles" component={Roles} />
-            <Route path="/settings" component={Settings} />
+            <Route path="users" component={Users} />
+            <Route path="service-requests" component={ServiceRequests} />
+            <Route path="centers" component={Centers} />
+            <Route path="warehouses" component={Warehouses} />
+            <Route path="customers" component={Customers} />
+            <Route path="categories" component={Categories} />
+            <Route path="transfers" component={Transfers} />
+            <Route path="reports" component={Reports} />
+            <Route path="activities" component={Activities} />
+            <Route path="roles" component={Roles} />
+            <Route path="settings" component={Settings} />
             <Route component={NotFound} />
           </Switch>
         </DashboardLayout>
