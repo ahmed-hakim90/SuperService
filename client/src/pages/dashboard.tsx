@@ -197,7 +197,9 @@ export default function Dashboard() {
         
         <Card data-testid="card-recent-activities">
           <CardHeader>
-            <CardTitle>آخر الأنشطة</CardTitle>
+            <CardTitle>
+              {currentUser?.role === 'technician' ? 'أنشطتك الأخيرة' : 'آخر الأنشطة'}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -206,11 +208,13 @@ export default function Dashboard() {
                   <div className="w-2 h-2 bg-primary rounded-full mt-2"></div>
                   <div className="flex-1">
                     <p className="text-sm text-card-foreground">{activity.description}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{activity.timestamp}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{activity.timestamp || new Date(activity.createdAt).toLocaleString('ar-EG')}</p>
                   </div>
                 </div>
               )) : (
-                <p className="text-center text-muted-foreground py-8">لا توجد أنشطة حديثة</p>
+                <p className="text-center text-muted-foreground py-8">
+                  {currentUser?.role === 'technician' ? 'لا توجد أنشطة لك حتى الآن' : 'لا توجد أنشطة حديثة'}
+                </p>
               )}
             </div>
           </CardContent>
