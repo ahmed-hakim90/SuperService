@@ -99,7 +99,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Store user in session
-      req.session.user = user;
+      (req as any).session.user = user;
 
       // Log activity
       await storage.logActivity({
