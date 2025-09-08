@@ -9,6 +9,7 @@ import {
   insertCategorySchema,
   insertProductSchema,
   insertServiceRequestSchema,
+  insertServiceRequestFollowUpSchema,
   insertWarehouseSchema,
   insertSparePartSchema,
   insertInventorySchema,
@@ -461,6 +462,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Delete customer error:", error);
       res.status(500).json({ message: "خطأ في حذف العميل" });
+    }
+  });
+
+  // Service Request Follow-ups
+  app.get("/api/service-requests/:id/follow-ups", async (req, res) => {
+    try {
+      const currentUser = await getCurrentUser(req);
+      if (!currentUser) {
+        return res.status(401).json({ message: "يجب تسجيل الدخول أولاً" });
+      }
+
+      // Check if user can access this service request
+      const serviceRequest = await storage.getServiceRequest(req.params.id);
+      if (!serviceRequest) {
+        return res.status(404).json({ message: "طلب الصيانة غير موجود" });
+      }
+
+      // Check permissions
+      if (!canAccessData(currentUser, 'serviceRequest', serviceRequest)) {
+        return res.status(403).json({ message: "ليس لديك صلاحية لعرض متابعات هذا الطلب" });
+      }
+
+      const followUps = await storage.getServiceRequestFollowUps(req.params.id);
+      res.json(followUps);
+    } catch (error) {
+      console.error("Get follow-ups error:", error);
+      res.status(500).json({ message: "خطأ في جلب المتابعات" });
+    }
+  });
+
+  app.post("/api/service-requests/:id/follow-ups", async (req, res) => {
+    try {
+      const currentUser = await getCurrentUser(req);
+      if (!currentUser) {
+        return res.status(401).json({ message: "يجب تسجيل الدخول أولاً" });
+      }
+
+      // Check if user can add follow-ups (only technicians)
+      if (currentUser.role !== 'technician') {
+        return res.status(403).json({ message: "فقط الفنيين يمكنهم إضافة متابعات" });
+      }
+
+      // Check if this service request exists and is assigned to the technician
+      const serviceRequest = await storage.getServiceRequest(req.params.id);
+      if (!serviceRequest) {
+        return res.status(404).json({ message: "طلب الصيانة غير موجود" });
+      }
+
+      if (serviceRequest.technicianId !== currentUser.id) {
+        return res.status(403).json({ message: "يمكنك إضافة متابعات فقط للطلبات المسندة إليك" });
+      }
+
+      const followUpData = insertServiceRequestFollowUpSchema.parse({
+        serviceRequestId: req.params.id,
+        technicianId: currentUser.id,
+        followUpText: req.body.followUpText
+      });
+
+      const followUp = await storage.createServiceRequestFollowUp(followUpData);
+
+      // Log activity
+      await storage.logActivity({
+        userId: currentUser.id,
+        action: "create",
+        entityType: "service_request_follow_up",
+        entityId: followUp.id,
+        description: `تم إضافة متابعة لطلب الصيانة: ${serviceRequest.requestNumber}`
+      });
+
+      res.status(201).json(followUp);
+    } catch (error) {
+      console.error("Create follow-up error:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "بيانات غير صحيحة", errors: error.errors });
+      }
+      res.status(500).json({ message: "خطأ في إضافة المتابعة" });
     }
   });
 
