@@ -9,6 +9,7 @@ import type {
   Warehouse, InsertWarehouse,
   SparePart, InsertSparePart,
   Inventory, InsertInventory,
+  ProductInventory, InsertProductInventory,
   PartsTransfer, InsertPartsTransfer,
   ActivityLog, InsertActivityLog
 } from "@shared/schema";
@@ -75,6 +76,14 @@ export interface IStorage {
 
   // Activity Logs
   logActivity(activity: InsertActivityLog): Promise<ActivityLog>;
+
+  // Product Inventory
+  getProductInventory(warehouseId: string): Promise<ProductInventory[]>;
+  getProductInventoryByProduct(productId: string): Promise<ProductInventory[]>;
+  getProductInventoryItem(warehouseId: string, productId: string): Promise<ProductInventory | undefined>;
+  createProductInventory(inventory: InsertProductInventory): Promise<ProductInventory>;
+  updateProductInventory(id: string, inventory: Partial<InsertProductInventory>): Promise<ProductInventory>;
+  deleteProductInventory(id: string): Promise<void>;
 }
 
 function generateId(): string {
@@ -91,6 +100,7 @@ export class MemStorage implements IStorage {
   private serviceRequestFollowUps: Map<string, ServiceRequestFollowUp> = new Map();
   private warehouses: Map<string, Warehouse> = new Map();
   private activityLogs: Map<string, ActivityLog> = new Map();
+  private productInventory: Map<string, ProductInventory> = new Map();
 
   constructor() {
     this.seedData();
