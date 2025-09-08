@@ -84,7 +84,7 @@ export const rolePageAccess: Record<UserRole, string[]> = {
     "reports", "activities", "data-management", "settings"
   ],
   manager: [
-    "dashboard", "users", "centers", "warehouses", "inventory", "customers", 
+    "dashboard", "warehouses", "inventory", "customers", 
     "categories", "service-requests", "transfers", "reports", "activities"
   ],
   technician: [

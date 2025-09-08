@@ -515,6 +515,7 @@ export class MemStorage implements IStorage {
       ...customerData,
       email: customerData.email ?? null,
       address: customerData.address ?? null,
+      centerId: customerData.centerId ?? null,
       createdAt: new Date(),
       updatedAt: new Date()
     };
@@ -782,6 +783,7 @@ export class MemStorage implements IStorage {
     const inventory: ProductInventory = {
       id: generateId(),
       ...inventoryData,
+      quantity: inventoryData.quantity ?? 0,
       minQuantity: inventoryData.minQuantity ?? 5,
       lastRestockDate: null,
       updatedAt: new Date()
