@@ -1,10 +1,33 @@
 import { db } from './db';
 import { sql } from 'drizzle-orm';
+import bcrypt from 'bcrypt';
+
+async function testConnection() {
+  try {
+    console.log('Testing database connection...');
+    
+    // Test basic connection
+    const result = await db.execute(sql`SELECT NOW() as current_time`);
+    console.log('✅ Database connection successful!');
+    console.log('Current time:', result[0]?.current_time);
+    
+    return true;
+  } catch (error) {
+    console.error('❌ Database connection failed:', error);
+    return false;
+  }
+}
 
 async function initDatabase() {
   console.log('Creating database tables...');
   
   try {
+    // Test connection first
+    const connected = await testConnection();
+    if (!connected) {
+      throw new Error('Database connection failed');
+    }
+
     // Create enums
     await db.execute(sql`
       DO $$ BEGIN
@@ -32,7 +55,7 @@ async function initDatabase() {
     
     await db.execute(sql`
       DO $$ BEGIN
-        CREATE TYPE parts_transfer_status AS ENUM ('pending', 'approved', 'rejected', 'completed');
+        CREATE TYPE transfer_status AS ENUM ('pending', 'approved', 'rejected', 'completed');
       EXCEPTION
         WHEN duplicate_object THEN null;
       END $$;
@@ -135,7 +158,6 @@ async function initDatabase() {
         service_request_id UUID NOT NULL,
         technician_id UUID NOT NULL,
         follow_up_text TEXT NOT NULL,
-        new_status service_request_status,
         created_at TIMESTAMP DEFAULT NOW()
       )
     `);
@@ -157,10 +179,10 @@ async function initDatabase() {
       CREATE TABLE IF NOT EXISTS spare_parts (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         name TEXT NOT NULL,
-        part_number TEXT UNIQUE,
+        part_number TEXT NOT NULL UNIQUE,
         category_id UUID,
+        price INTEGER,
         description TEXT,
-        unit_price INTEGER,
         created_at TIMESTAMP DEFAULT NOW()
       )
     `);
@@ -171,9 +193,8 @@ async function initDatabase() {
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         warehouse_id UUID NOT NULL,
         spare_part_id UUID NOT NULL,
-        quantity INTEGER DEFAULT 0,
+        quantity INTEGER NOT NULL DEFAULT 0,
         min_quantity INTEGER DEFAULT 5,
-        last_restock_date TIMESTAMP,
         updated_at TIMESTAMP DEFAULT NOW()
       )
     `);
@@ -184,7 +205,7 @@ async function initDatabase() {
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         warehouse_id UUID NOT NULL,
         product_id UUID NOT NULL,
-        quantity INTEGER DEFAULT 0,
+        quantity INTEGER NOT NULL DEFAULT 0,
         min_quantity INTEGER DEFAULT 5,
         last_restock_date TIMESTAMP,
         updated_at TIMESTAMP DEFAULT NOW()
@@ -199,9 +220,10 @@ async function initDatabase() {
         to_warehouse_id UUID NOT NULL,
         spare_part_id UUID NOT NULL,
         quantity INTEGER NOT NULL,
-        status parts_transfer_status NOT NULL DEFAULT 'pending',
+        status transfer_status NOT NULL DEFAULT 'pending',
         requested_by UUID NOT NULL,
         approved_by UUID,
+        reason TEXT,
         notes TEXT,
         created_at TIMESTAMP DEFAULT NOW(),
         updated_at TIMESTAMP DEFAULT NOW()
@@ -221,19 +243,22 @@ async function initDatabase() {
       )
     `);
 
-    console.log('Database tables created successfully!');
+    console.log('✅ Database tables created successfully!');
+    
+    // Hash password for admin user
+    const hashedPassword = await bcrypt.hash('Admin123!', 10);
     
     // Insert initial admin user
     await db.execute(sql`
       INSERT INTO users (email, password, full_name, phone, role, status)
-      VALUES ('admin@sokany.com', 'Admin123!', 'مدير النظام', '+966501234567', 'admin', 'active')
+      VALUES ('admin@sokany.com', ${hashedPassword}, 'مدير النظام', '+966501234567', 'admin', 'active')
       ON CONFLICT (email) DO NOTHING
     `);
     
-    console.log('Initial admin user created: admin@sokany.com / Admin123!');
+    console.log('✅ Initial admin user created: admin@sokany.com / Admin123!');
     
   } catch (error) {
-    console.error('Error initializing database:', error);
+    console.error('❌ Error initializing database:', error);
     throw error;
   }
 }
