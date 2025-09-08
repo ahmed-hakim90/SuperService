@@ -18,6 +18,7 @@ export const rolePermissions: Record<UserRole, Record<string, Permission>> = {
     roles: { read: true, create: true, update: true, delete: true },
     centers: { read: true, create: true, update: true, delete: true },
     warehouses: { read: true, create: true, update: true, delete: true },
+    inventory: { read: true, create: true, update: true, delete: true },
     customers: { read: true, create: true, update: true, delete: true },
     categories: { read: true, create: true, update: true, delete: true },
     serviceRequests: { read: true, create: true, update: true, delete: true },
@@ -33,6 +34,7 @@ export const rolePermissions: Record<UserRole, Record<string, Permission>> = {
     users: { read: true, create: true, update: true, delete: false }, // For their center only
     centers: { read: true, create: false, update: true, delete: false }, // Their center only
     warehouses: { read: true, create: true, update: true, delete: false }, // Their center only
+    inventory: { read: true, create: true, update: true, delete: false }, // Their warehouses only
     customers: { read: true, create: true, update: true, delete: false },
     categories: { read: true, create: true, update: true, delete: false },
     serviceRequests: { read: true, create: true, update: true, delete: false }, // Their center only
@@ -61,6 +63,7 @@ export const rolePermissions: Record<UserRole, Record<string, Permission>> = {
     // Warehouse manager handles inventory and transfers
     dashboard: { read: true, create: false, update: false, delete: false },
     warehouses: { read: true, create: false, update: true, delete: false }, // Their warehouse only
+    inventory: { read: true, create: true, update: true, delete: false }, // Their warehouse inventory
     categories: { read: true, create: true, update: true, delete: false }, // For spare parts
     transfers: { read: true, create: true, update: true, delete: false }, // Their warehouse only
     reports: { read: true, create: false, update: false, delete: false }, // Inventory reports only
@@ -75,12 +78,12 @@ export const rolePermissions: Record<UserRole, Record<string, Permission>> = {
 // Define which pages each role can access
 export const rolePageAccess: Record<UserRole, string[]> = {
   admin: [
-    "dashboard", "users", "roles", "centers", "warehouses", 
+    "dashboard", "users", "roles", "centers", "warehouses", "inventory",
     "customers", "categories", "service-requests", "transfers", 
     "reports", "activities", "settings"
   ],
   manager: [
-    "dashboard", "users", "centers", "warehouses", "customers", 
+    "dashboard", "users", "centers", "warehouses", "inventory", "customers", 
     "categories", "service-requests", "transfers", "reports", "activities"
   ],
   technician: [
@@ -90,7 +93,7 @@ export const rolePageAccess: Record<UserRole, string[]> = {
     "dashboard", "customers", "service-requests", "categories"
   ],
   warehouse_manager: [
-    "dashboard", "warehouses", "categories", "transfers", "reports"
+    "dashboard", "warehouses", "inventory", "categories", "transfers", "reports"
   ],
   customer: [
     "service-requests"
