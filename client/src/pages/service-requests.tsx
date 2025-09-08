@@ -25,6 +25,8 @@ export default function ServiceRequests() {
   const [selectedRequestForFollowUp, setSelectedRequestForFollowUp] = useState<ServiceRequest | null>(null);
   const [followUpText, setFollowUpText] = useState("");
   const [newStatus, setNewStatus] = useState<string>("");
+  const [viewingRequest, setViewingRequest] = useState<ServiceRequest | null>(null);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user: currentUser } = useAuth();
@@ -127,6 +129,11 @@ export default function ServiceRequests() {
     if (confirm("هل أنت متأكد من حذف هذا الطلب؟")) {
       deleteRequestMutation.mutate(id);
     }
+  };
+
+  const handleViewDetails = (request: ServiceRequest) => {
+    setViewingRequest(request);
+    setIsViewDialogOpen(true);
   };
 
   const handleAddFollowUp = (request: ServiceRequest) => {
@@ -282,6 +289,18 @@ export default function ServiceRequests() {
                   </SelectContent>
                 </Select>
               </div>
+              
+              {/* Status Progress Indicator */}
+              {formData.status && (
+                <div className="mt-4 p-4 bg-muted rounded-lg">
+                  <StatusProgress 
+                    status={formData.status as any} 
+                    size="md" 
+                    showLabel={true}
+                    animate={true}
+                  />
+                </div>
+              )}
               <Button type="submit" className="w-full" data-testid="button-save-request">
                 {editingRequest ? "تحديث" : "إضافة"}
               </Button>
@@ -435,7 +454,11 @@ export default function ServiceRequests() {
                 </tr>
               ) : (
                 filteredRequests.map((request: ServiceRequest) => (
-                  <tr key={request.id} className="hover:bg-muted/50" data-testid={`row-request-${request.id}`}>
+                  <tr key={request.id} className="hover:bg-muted/50 cursor-pointer" data-testid={`row-request-${request.id}`} onClick={(e) => {
+                    // Don't open view dialog if clicking on action buttons
+                    if ((e.target as HTMLElement).closest('button')) return;
+                    handleViewDetails(request);
+                  }}>
                     <td className="py-4 px-4">
                       <span className="font-mono text-sm text-primary font-medium">{request.requestNumber}</span>
                     </td>
@@ -500,6 +523,122 @@ export default function ServiceRequests() {
           </table>
         </div>
       </Card>
+
+      {/* View Details Dialog */}
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">
+              تفاصيل طلب الصيانة #{viewingRequest?.requestNumber}
+            </DialogTitle>
+          </DialogHeader>
+          {viewingRequest && (
+            <div className="space-y-6">
+              {/* Main Progress Indicator */}
+              <div className="p-4 bg-muted rounded-lg">
+                <StatusProgress 
+                  status={viewingRequest.status as any} 
+                  size="lg" 
+                  showLabel={true}
+                  animate={true}
+                />
+              </div>
+              
+              {/* Request Details Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">رقم الطلب</p>
+                  <p className="font-medium text-lg">{viewingRequest.requestNumber}</p>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">العميل</p>
+                  <p className="font-medium">
+                    {customers?.find((c: any) => c.id === viewingRequest.customerId)?.fullName || '-'}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">الجهاز</p>
+                  <p className="font-medium">{viewingRequest.deviceName}</p>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">الموديل</p>
+                  <p className="font-medium">{viewingRequest.model || '-'}</p>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">مركز الخدمة</p>
+                  <p className="font-medium">
+                    {centers?.find((c: any) => c.id === viewingRequest.centerId)?.name || '-'}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">تاريخ الإنشاء</p>
+                  <p className="font-medium">
+                    {viewingRequest.createdAt ? new Date(viewingRequest.createdAt).toLocaleDateString('ar-EG') : '-'}
+                  </p>
+                </div>
+              </div>
+              
+              {/* Issue Description */}
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">وصف المشكلة</p>
+                <div className="p-3 bg-muted rounded-lg">
+                  <p className="text-card-foreground">{viewingRequest.issue}</p>
+                </div>
+              </div>
+              
+              {/* Cost Information */}
+              {(viewingRequest.estimatedCost || viewingRequest.actualCost) && (
+                <div className="grid grid-cols-2 gap-4">
+                  {viewingRequest.estimatedCost && (
+                    <div className="space-y-2">
+                      <p className="text-sm text-muted-foreground">التكلفة التقديرية</p>
+                      <p className="font-medium text-lg">{viewingRequest.estimatedCost} ريال</p>
+                    </div>
+                  )}
+                  {viewingRequest.actualCost && (
+                    <div className="space-y-2">
+                      <p className="text-sm text-muted-foreground">التكلفة الفعلية</p>
+                      <p className="font-medium text-lg">{viewingRequest.actualCost} ريال</p>
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {/* Notes */}
+              {viewingRequest.notes && (
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">ملاحظات</p>
+                  <div className="p-3 bg-muted rounded-lg">
+                    <p className="text-card-foreground">{viewingRequest.notes}</p>
+                  </div>
+                </div>
+              )}
+              
+              {/* Action Buttons */}
+              <div className="flex gap-2 justify-end">
+                {canUpdateRequests && (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      handleEdit(viewingRequest);
+                      setIsViewDialogOpen(false);
+                    }}
+                  >
+                    <i className="bi bi-pencil ml-2"></i>
+                    تعديل
+                  </Button>
+                )}
+                <Button
+                  variant="outline"
+                  onClick={() => setIsViewDialogOpen(false)}
+                >
+                  إغلاق
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Follow-up Dialog */}
       <Dialog open={isFollowUpDialogOpen} onOpenChange={setIsFollowUpDialogOpen}>
