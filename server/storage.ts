@@ -56,6 +56,13 @@ export interface IStorage {
   updateServiceRequest(id: string, request: Partial<InsertServiceRequest>): Promise<ServiceRequest>;
   deleteServiceRequest(id: string): Promise<void>;
 
+  // Warehouses
+  getAllWarehouses(): Promise<Warehouse[]>;
+  getWarehouse(id: string): Promise<Warehouse | undefined>;
+  createWarehouse(warehouse: InsertWarehouse): Promise<Warehouse>;
+  updateWarehouse(id: string, warehouse: Partial<InsertWarehouse>): Promise<Warehouse>;
+  deleteWarehouse(id: string): Promise<void>;
+
   // Dashboard Stats
   getDashboardStats(): Promise<any>;
   getRecentServiceRequests(): Promise<any[]>;
@@ -76,6 +83,7 @@ export class MemStorage implements IStorage {
   private categories: Map<string, Category> = new Map();
   private products: Map<string, Product> = new Map();
   private serviceRequests: Map<string, ServiceRequest> = new Map();
+  private warehouses: Map<string, Warehouse> = new Map();
   private activityLogs: Map<string, ActivityLog> = new Map();
 
   constructor() {
@@ -210,6 +218,26 @@ export class MemStorage implements IStorage {
       }
     ];
 
+    // Sample Warehouses
+    const sampleWarehouses: Warehouse[] = [
+      {
+        id: "warehouse-1",
+        name: "مخزن الرياض الرئيسي",
+        location: "حي الملز، الرياض",
+        managerId: "user-2",
+        centerId: "center-1",
+        createdAt: new Date("2024-01-20")
+      },
+      {
+        id: "warehouse-2",
+        name: "مخزن جدة الفرعي",
+        location: "حي الروضة، جدة",
+        managerId: null,
+        centerId: "center-2",
+        createdAt: new Date("2024-02-01")
+      }
+    ];
+
     // Sample Service Requests
     const sampleRequests: ServiceRequest[] = [
       {
@@ -278,6 +306,7 @@ export class MemStorage implements IStorage {
     sampleCustomers.forEach(customer => this.customers.set(customer.id, customer));
     sampleCategories.forEach(category => this.categories.set(category.id, category));
     sampleProducts.forEach(product => this.products.set(product.id, product));
+    sampleWarehouses.forEach(warehouse => this.warehouses.set(warehouse.id, warehouse));
     sampleRequests.forEach(request => this.serviceRequests.set(request.id, request));
     sampleActivities.forEach(activity => this.activityLogs.set(activity.id, activity));
   }
@@ -535,6 +564,45 @@ export class MemStorage implements IStorage {
 
   async deleteServiceRequest(id: string): Promise<void> {
     this.serviceRequests.delete(id);
+  }
+
+  // Warehouses CRUD
+  async getAllWarehouses(): Promise<Warehouse[]> {
+    return Array.from(this.warehouses.values()).sort((a, b) => 
+      new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime()
+    );
+  }
+
+  async getWarehouse(id: string): Promise<Warehouse | undefined> {
+    return this.warehouses.get(id);
+  }
+
+  async createWarehouse(warehouseData: InsertWarehouse): Promise<Warehouse> {
+    const warehouse: Warehouse = {
+      id: generateId(),
+      ...warehouseData,
+      managerId: warehouseData.managerId ?? null,
+      centerId: warehouseData.centerId ?? null,
+      createdAt: new Date()
+    };
+    this.warehouses.set(warehouse.id, warehouse);
+    return warehouse;
+  }
+
+  async updateWarehouse(id: string, warehouseData: Partial<InsertWarehouse>): Promise<Warehouse> {
+    const existingWarehouse = this.warehouses.get(id);
+    if (!existingWarehouse) throw new Error('Warehouse not found');
+    
+    const updatedWarehouse: Warehouse = {
+      ...existingWarehouse,
+      ...warehouseData
+    };
+    this.warehouses.set(id, updatedWarehouse);
+    return updatedWarehouse;
+  }
+
+  async deleteWarehouse(id: string): Promise<void> {
+    this.warehouses.delete(id);
   }
 
   // Dashboard Stats

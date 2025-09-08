@@ -98,6 +98,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "الحساب غير مفعل، يرجى انتظار موافقة المسؤول" });
       }
 
+      // Store user in session
+      req.session.user = user;
+
       // Log activity
       await storage.logActivity({
         userId: user.id,
