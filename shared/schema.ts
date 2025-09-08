@@ -117,13 +117,24 @@ export const spareParts = pgTable("spare_parts", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Inventory table
+// Inventory table (for spare parts)
 export const inventory = pgTable("inventory", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   warehouseId: uuid("warehouse_id").notNull(),
   sparePartId: uuid("spare_part_id").notNull(),
   quantity: integer("quantity").notNull().default(0),
   minQuantity: integer("min_quantity").default(5),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Product Inventory table (for products)
+export const productInventory = pgTable("product_inventory", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  warehouseId: uuid("warehouse_id").notNull(),
+  productId: uuid("product_id").notNull(),
+  quantity: integer("quantity").notNull().default(0),
+  minQuantity: integer("min_quantity").default(5),
+  lastRestockDate: timestamp("last_restock_date"),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
@@ -224,6 +235,14 @@ export const insertInventorySchema = createInsertSchema(inventory).omit({
   sparePartId: z.string(),
 });
 
+export const insertProductInventorySchema = createInsertSchema(productInventory).omit({
+  id: true,
+  updatedAt: true,
+}).extend({
+  warehouseId: z.string(),
+  productId: z.string(),
+});
+
 export const insertPartsTransferSchema = createInsertSchema(partsTransfers).omit({
   id: true,
   createdAt: true,
@@ -279,6 +298,9 @@ export type SparePart = typeof spareParts.$inferSelect;
 
 export type InsertInventory = z.infer<typeof insertInventorySchema>;
 export type Inventory = typeof inventory.$inferSelect;
+
+export type InsertProductInventory = z.infer<typeof insertProductInventorySchema>;
+export type ProductInventory = typeof productInventory.$inferSelect;
 
 export type InsertPartsTransfer = z.infer<typeof insertPartsTransferSchema>;
 export type PartsTransfer = typeof partsTransfers.$inferSelect;
