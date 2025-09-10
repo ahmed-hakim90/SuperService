@@ -7,7 +7,9 @@ import { setupVite, serveStatic, log } from "./vite";
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-
+app.get("/", (req, res) => {
+  res.send("Server is working!");
+});
 // Session middleware
 app.use(session({
   secret: 'sokany-service-center-secret',
