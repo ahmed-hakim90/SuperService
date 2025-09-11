@@ -16,7 +16,7 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: false, // Set to true in production with HTTPS
+    secure: process.env.NODE_ENV === 'production', // Use HTTPS in production
     maxAge: 24 * 60 * 60 * 1000 // 24 hours
   }
 }));
@@ -76,9 +76,13 @@ app.use((req, res, next) => {
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || '3000', 10);
+  
+  // In serverless environments like Vercel, don't bind to localhost only
+  const host = process.env.VERCEL ? undefined : "127.0.0.1";
+  
   server.listen({
     port,
-    host: "127.0.0.1",
+    ...(host && { host }),
   }, () => {
     log(`serving on port ${port}`);
   });
